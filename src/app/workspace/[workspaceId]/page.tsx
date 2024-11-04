@@ -10,11 +10,44 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { Users, Folder, BarChart2, Clock, Plus } from 'lucide-react'
+import { Users, Folder, BarChart2, Clock, Plus, User } from 'lucide-react'
 
-// Mock data (replace with actual data fetching in a real application)
-const workspaceData = {
+// Mock data for personal workspace
+const personalWorkspaceData = {
+  id: "personal-123",
+  name: "John's Workspace",
+  type: "personal",
+  owner: {
+    id: 1,
+    name: "John Doe",
+    avatar: "/avatars/john-doe.jpg",
+  },
+  stats: {
+    totalProjects: 5,
+    completedProjects: 2,
+    totalTasks: 25,
+    completedTasks: 18,
+  },
+  projects: [
+    { id: 1, name: "Personal Blog", progress: 75, tasks: 10, completedTasks: 7 },
+    { id: 2, name: "Side Project", progress: 40, tasks: 15, completedTasks: 6 },
+  ],
+  activities: [
+    { id: 1, user: "John Doe", action: "completed a task", project: "Personal Blog", time: "2 hours ago" },
+    { id: 2, user: "John Doe", action: "created a new project", project: "Side Project", time: "5 hours ago" },
+  ]
+}
+
+// Mock data for shared workspace
+const sharedWorkspaceData = {
+  id: "shared-456",
   name: "Acme Corp Workspace",
+  type: "shared",
+  owner: {
+    id: 1,
+    name: "John Doe",
+    avatar: "/avatars/john-doe.jpg",
+  },
   stats: {
     totalProjects: 12,
     completedProjects: 5,
@@ -25,43 +58,53 @@ const workspaceData = {
     { id: 1, name: "John Doe", avatar: "/avatars/john-doe.jpg", online: true },
     { id: 2, name: "Jane Smith", avatar: "/avatars/jane-smith.jpg", online: false },
     { id: 3, name: "Bob Johnson", avatar: "/avatars/bob-johnson.jpg", online: true },
-    { id: 4, name: "Alice Williams", avatar: "/avatars/alice-williams.jpg", online: false },
-    { id: 5, name: "Charlie Brown", avatar: "/avatars/charlie-brown.jpg", online: true },
   ],
   projects: [
     { id: 1, name: "Website Redesign", progress: 75, tasks: 20, completedTasks: 15 },
     { id: 2, name: "Mobile App Development", progress: 40, tasks: 30, completedTasks: 12 },
-    { id: 3, name: "Marketing Campaign", progress: 90, tasks: 15, completedTasks: 13 },
-    { id: 4, name: "Database Migration", progress: 20, tasks: 25, completedTasks: 5 },
   ],
   activities: [
     { id: 1, user: "John Doe", action: "completed a task", project: "Website Redesign", time: "2 hours ago" },
     { id: 2, user: "Jane Smith", action: "created a new project", project: "Q4 Planning", time: "5 hours ago" },
-    { id: 3, user: "Bob Johnson", action: "commented on", project: "Mobile App Development", time: "1 day ago" },
-    { id: 4, user: "Alice Williams", action: "updated the status of", project: "Marketing Campaign", time: "2 days ago" },
   ]
 }
 
 export default function WorkspaceDashboard() {
-  const [workspace, setWorkspace] = useState(workspaceData)
+  const [workspace, setWorkspace] = useState<any>(null)
   const params = useParams()
   const workspaceId = params.id
 
   // Fetch workspace data (replace with actual API call)
   useEffect(() => {
-    // Simulating API call
+    // Simulating API call - here we're checking if it's a personal workspace based on ID
     const fetchWorkspace = async () => {
-      // const response = await fetch(`/api/workspaces/${workspaceId}`)
-      // const data = await response.json()
-      // setWorkspace(data)
-      setWorkspace(workspaceData) // Using mock data for now
+      // In real app, fetch from API based on workspaceId
+      const isPersonal = workspaceId === "personal-123"
+      setWorkspace(isPersonal ? personalWorkspaceData : sharedWorkspaceData)
     }
     fetchWorkspace()
   }, [workspaceId])
 
+  if (!workspace) return null
+
+  const isPersonal = workspace.type === "personal"
+
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">{workspace.name}</h1>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold">{workspace.name}</h1>
+          <Badge variant={isPersonal ? "secondary" : "default"}>
+            {isPersonal ? "Personal Workspace" : "Shared Workspace"}
+          </Badge>
+        </div>
+        {!isPersonal && (
+          <Button variant="outline">
+            <Users className="mr-2 h-4 w-4" />
+            Manage Team
+          </Button>
+        )}
+      </div>
 
       {/* Workspace stats/metrics bar */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
@@ -91,14 +134,29 @@ export default function WorkspaceDashboard() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Team Members</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">
+              {isPersonal ? "Owner" : "Team Members"}
+            </CardTitle>
+            {isPersonal ? <User className="h-4 w-4 text-muted-foreground" /> : 
+                         <Users className="h-4 w-4 text-muted-foreground" />}
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{workspace.members.length}</div>
-            <p className="text-xs text-muted-foreground">
-              {workspace.members.filter(m => m.online).length} online
-            </p>
+            {isPersonal ? (
+              <div className="flex items-center gap-2">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={workspace.owner.avatar} alt={workspace.owner.name} />
+                  <AvatarFallback>{workspace.owner.name.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
+                </Avatar>
+                <span className="text-sm">{workspace.owner.name}</span>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{workspace.members.length}</div>
+                <p className="text-xs text-muted-foreground">
+                  {workspace.members.filter((m: any) => m.online).length} online
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -115,30 +173,34 @@ export default function WorkspaceDashboard() {
         </Card>
       </div>
 
-      {/* Team Members */}
-      <h2 className="text-2xl font-semibold mb-4">Team Members</h2>
-      <ScrollArea className="w-full whitespace-nowrap rounded-md border">
-        <div className="flex w-max space-x-4 p-4">
-          {workspace.members.map((member) => (
-            <div key={member.id} className="flex flex-col items-center space-y-2">
-              <div className="relative">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={member.avatar} alt={member.name} />
-                  <AvatarFallback>{member.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                </Avatar>
-                <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${member.online ? 'bg-green-500' : 'bg-gray-300'}`} />
-              </div>
-              <span className="text-sm font-medium">{member.name}</span>
+      {/* Team Members - Only show for shared workspaces */}
+      {!isPersonal && (
+        <>
+          <h2 className="text-2xl font-semibold mb-4">Team Members</h2>
+          <ScrollArea className="w-full whitespace-nowrap rounded-md border">
+            <div className="flex w-max space-x-4 p-4">
+              {workspace.members.map((member: any) => (
+                <div key={member.id} className="flex flex-col items-center space-y-2">
+                  <div className="relative">
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage src={member.avatar} alt={member.name} />
+                      <AvatarFallback>{member.name.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
+                    </Avatar>
+                    <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${member.online ? 'bg-green-500' : 'bg-gray-300'}`} />
+                  </div>
+                  <span className="text-sm font-medium">{member.name}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        </>
+      )}
 
       {/* Projects */}
       <h2 className="text-2xl font-semibold mt-8 mb-4">Projects</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {workspace.projects.map((project) => (
+        {workspace.projects.map((project: any) => (
           <Card key={project.id}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-lg font-medium">{project.name}</CardTitle>
@@ -171,12 +233,12 @@ export default function WorkspaceDashboard() {
       <h2 className="text-2xl font-semibold mt-8 mb-4">Recent Activity</h2>
       <Card>
         <CardContent className="p-6">
-          {workspace.activities.map((activity, index) => (
+          {workspace.activities.map((activity: any, index: number) => (
             <div key={activity.id}>
               <div className="flex items-center mb-4">
                 <Avatar className="h-8 w-8 mr-2">
                   <AvatarImage src={`/avatars/${activity.user.toLowerCase().replace(' ', '-')}.jpg`} alt={activity.user} />
-                  <AvatarFallback>{activity.user.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                  <AvatarFallback>{activity.user.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                   <p className="text-sm">

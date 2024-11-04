@@ -18,9 +18,9 @@ export default function ProjectLayout({ children }: { children: React.ReactNode 
 
   const handleTabChange = (value: string) => {
     if (value === 'overview') {
-      router.push(`/projects/${projectId}`)
+      router.push(`/project/${projectId}`)
     } else {
-      router.push(`/projects/${projectId}/${value}`)
+      router.push(`/project/${projectId}/${value}`)
     }
   }
 
