@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -67,6 +68,7 @@ const workspaces: Workspace[] = [
 ]
 
 export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
+  const router = useRouter();
   const [isMobile, setIsMobile] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedWorkspaces, setExpandedWorkspaces] = useState<string[]>(['1'])
@@ -115,7 +117,7 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
     )
   }
 
-  const NavItem = ({ icon: Icon, label, href, className = '' }: NavItem & { className?: string }) => (
+  const NavItem = ({ icon: Icon, label, href, onClick, className = '' }: NavItem & { onClick?: () => void, className?: string }) => (
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
@@ -180,13 +182,18 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
           <div className="py-2">
             <NavItem icon={Home} label="Dashboard" href="/dashboard" />
             <NavItem icon={Calendar} label="Calendar" href="/calendar" />
-            
+
             {/* Workspaces Section */}
             {sidebarState.width === 'w-64' ? (
               <div className="mt-4">
                 <div className="px-4 flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-muted-foreground">Workspaces</span>
-                  <Button variant="ghost" size="icon" className="h-5 w-5">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-5 w-5"
+                    onClick={() => router.push('/workspace/new')} 
+                  >
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
@@ -221,7 +228,7 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
                             className="w-full px-4 justify-between h-8"
                             asChild
                           >
-                            <Link href={`/projects/${project.id}`}>
+                            <Link href={`/project/${project.id}`}>
                               <div className="flex items-center">
                                 <FolderKanban className="h-4 w-4 mr-2" />
                                 <span className="text-sm">{project.name}</span>
@@ -234,6 +241,7 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
                           variant="ghost"
                           size="default"
                           className="w-full px-4 justify-start h-8 text-muted-foreground"
+                          onClick={() => router.push('/project/new')} // Route to new project page
                         >
                           <Plus className="h-4 w-4 mr-2" />
                           <span className="text-sm">New Project</span>
@@ -246,18 +254,10 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
             ) : (
               // Collapsed workspace view
               <div className="py-2">
-                <Button
-                  variant="ghost"
-                  size="default"
-                  className="w-full px-2 justify-center"
-                >
+                <Button variant="ghost" size="default" className="w-full px-2 justify-center">
                   <Building2 className="h-5 w-5" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="default"
-                  className="w-full px-2 justify-center"
-                >
+                <Button variant="ghost" size="default" className="w-full px-2 justify-center">
                   <FolderKanban className="h-5 w-5" />
                 </Button>
               </div>
@@ -267,9 +267,9 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
 
         <Separator />
 
-        {/* Bottom Section */}
-        <div className="py-4 space-y-2">
-          <NavItem icon={Settings} label="Settings" href="/settings" />
+         {/* Bottom Section */}
+         <div className="py-4 space-y-2">
+          <NavItem icon={Settings} label="Settings" href="/profile/{userId}/settings" />
           <NavItem icon={HelpCircle} label="Help" href="/help" />
         </div>
 

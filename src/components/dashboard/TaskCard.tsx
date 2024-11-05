@@ -62,6 +62,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
         <h3 className="font-semibold text-sm line-clamp-2">{title}</h3>
         <ProgressBar progress={progress} />
         <div className="flex flex-col sm:flex-row gap-2 mt-auto">
+          {/*}
           <Button size="sm" variant="outline" className="flex-1 text-xs py-1 h-8">
             <PlayCircle className="h-3 w-3 mr-1" />
             Start Timer
@@ -70,6 +71,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
             <CheckCircle2 className="h-3 w-3 mr-1" />
             Mark Complete
           </Button>
+          {*/}
         </div>
       </CardContent>
     </Card>
