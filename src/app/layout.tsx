@@ -15,7 +15,7 @@ export default function RootLayout({
 }) {
 
   const pathname = usePathname();
-const isAuthPage = pathname.startsWith('/sign');
+  const isAuthPage = pathname.startsWith('/auth') || pathname === '/';
 
 return (
   <html lang="en">

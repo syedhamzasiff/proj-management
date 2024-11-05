@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-export default function SignIn() {
+export default function SignUp() {
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -17,25 +18,35 @@ export default function SignIn() {
     e.preventDefault()
     setError('')
     
-    // Here you would typically make an API call to your backend to authenticate the user
-    // For this example, we'll just simulate a successful signin
+    // Here you would typically make an API call to your backend to create the user
+    // For this example, we'll just simulate a successful signup
     try {
       // Simulated API call
       await new Promise(resolve => setTimeout(resolve, 1000))
-      console.log('User signed in:', { email, password })
-      router.push('/dashboard') // Redirect to dashboard after successful signin
+      console.log('User signed up:', { name, email, password })
+      router.push('/dashboard') // Redirect to dashboard after successful signup
     } catch (err) {
-      setError('Invalid email or password. Please try again.')
+      setError('Failed to create account. Please try again.')
     }
   }
 
   return (
     <div className="space-y-6">
       <div className="space-y-2 text-center">
-        <h1 className="text-3xl font-bold">Welcome back</h1>
-        <p className="text-gray-500">Enter your credentials to access your account</p>
+        <h1 className="text-3xl font-bold">Create an account</h1>
+        <p className="text-gray-500">Enter your information to get started with Projectify</p>
       </div>
       <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="name">Name</Label>
+          <Input
+            id="name"
+            placeholder="John Doe"
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </div>
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input
@@ -58,12 +69,12 @@ export default function SignIn() {
           />
         </div>
         {error && <p className="text-red-500 text-sm">{error}</p>}
-        <Button type="submit" className="w-full">Sign In</Button>
+        <Button type="submit" className="w-full">Sign Up</Button>
       </form>
       <p className="text-center text-sm text-gray-600">
-        Don't have an account?{' '}
-        <Link href="/signup" className="font-medium text-indigo-600 hover:text-indigo-500">
-          Sign up
+        Already have an account?{' '}
+        <Link href="/auth/signin" className="font-medium text-indigo-600 hover:text-indigo-500">
+          Sign in
         </Link>
       </p>
     </div>
