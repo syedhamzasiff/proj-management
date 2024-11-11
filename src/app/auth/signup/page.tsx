@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import axios from "axios"
 
 export default function SignUp() {
   const [name, setName] = useState('')
@@ -18,15 +19,13 @@ export default function SignUp() {
     e.preventDefault()
     setError('')
     
-    // Here you would typically make an API call to your backend to create the user
-    // For this example, we'll just simulate a successful signup
     try {
-      // Simulated API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      console.log('User signed up:', { name, email, password })
-      router.push('/dashboard') // Redirect to dashboard after successful signup
-    } catch (err) {
-      setError('Failed to create account. Please try again.')
+      const res = await axios.post('/api/auth/signup', {name, email, password}) 
+      if(res.status === 200){
+        console.log(res)
+      }
+    } catch (error) {
+      console.log('phirse karou signup')
     }
   }
 

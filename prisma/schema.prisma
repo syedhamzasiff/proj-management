@@ -15,7 +15,195 @@ datasource db {
 }
 
 model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
+  id           String       @id @default(cuid())
+  email        String    @unique
+  password_hash String
+  name         String
+  avatar_url   String?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+  is_active    Boolean   @default(true)
+
+  // Relations
+  workspaces   ProjectWorkspaceMember[]
+  tasks        TaskAssignment[]
+  comments     Comment[]
+  //attachments  Attachment[]
+
+  @@map("users")
 }
+
+model Workspace {
+  id          String       @id @default(cuid())
+  name        String
+  description String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  // Relations
+  members     ProjectWorkspaceMember[]
+  projects    Project[]
+
+  @@map("workspaces")
+}
+
+model ProjectWorkspaceMember {
+  id            String       @id @default(cuid())
+  userId        String
+  workspaceId   String
+  projectId     String
+  role          String
+  joined_at     DateTime  @default(now())
+
+  // Relations
+  user          User      @relation(fields: [userId], references: [id])
+  workspace     Workspace @relation(fields: [workspaceId], references: [id])
+  project       Project   @relation(fields: [projectId], references: [id])
+
+  @@unique([userId, workspaceId, projectId])
+  @@map("project_workspace_members")
+}
+
+model Project {
+  id          String       @id @default(cuid())
+  workspaceId String
+  name        String
+  description String?
+  status      String
+  start_date  DateTime
+  end_date    DateTime?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  // Relations
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  members     ProjectWorkspaceMember[]
+  tasks       Task[]
+  //docs        Doc[]
+  //notepads    Notepad[]
+  //whiteboards Whiteboard[]
+
+  @@map("projects")
+}
+
+model Task {
+  id          String       @id @default(cuid())
+  projectId   String
+  title       String
+  description String?
+  status      String
+  priority    Int
+  due_date    DateTime?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  // Relations
+  project     Project   @relation(fields: [projectId], references: [id])
+  assignments TaskAssignment[]
+  comments    Comment[]
+  //attachments Attachment[]
+
+  @@map("tasks")
+}
+
+model TaskAssignment {
+  id           String       @id @default(cuid())
+  taskId       String
+  userId       String
+  assigned_at  DateTime @default(now())
+
+  // Relations
+  task         Task     @relation(fields: [taskId], references: [id])
+  user         User     @relation(fields: [userId], references: [id])
+
+  @@unique([taskId, userId])
+  @@map("task_assignments")
+}
+
+model Comment {
+  id         String       @id @default(cuid())
+  taskId     String
+  userId     String
+  content    String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  task       Task     @relation(fields: [taskId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@map("comments")
+}
+
+// model Attachment {
+//   id          Int      @id @default(autoincrement())
+//   taskId      Int
+//   userId      Int
+//   file_name   String
+//   file_path   String
+//   file_type   String
+//   file_size   Int
+//   uploaded_at DateTime @default(now())
+
+//   // Relations
+//   task        Task     @relation(fields: [taskId], references: [id])
+//   user        User     @relation(fields: [userId], references: [id])
+
+//   @@map("attachments")
+// }
+
+// model Doc {
+//   id          Int      @id @default(autoincrement())
+//   projectId   Int
+//   title       String
+//   content     String
+//   created_at  DateTime @default(now())
+//   updated_at  DateTime @updatedAt
+
+//   // Relations
+//   project     Project  @relation(fields: [projectId], references: [id])
+
+//   @@map("docs")
+// }
+
+// model Notepad {
+//   id          Int      @id @default(autoincrement())
+//   projectId   Int
+//   title       String
+//   created_at  DateTime @default(now())
+//   updated_at  DateTime @updatedAt
+
+//   // Relations
+//   project     Project  @relation(fields: [projectId], references: [id])
+//   notes       Notes[]
+
+//   @@map("notepads")
+// }
+
+// model Notes {
+//   id          Int      @id @default(autoincrement())
+//   notepadId   Int
+//   title       String
+//   content     String
+//   created_at  DateTime @default(now())
+//   updated_at  DateTime @updatedAt
+
+//   // Relations
+//   notepad     Notepad  @relation(fields: [notepadId], references: [id])
+
+//   @@map("notes")
+// }
+
+// model Whiteboard {
+//   id          Int      @id @default(autoincrement())
+//   projectId   Int
+//   title       String
+//   content     String
+//   created_at  DateTime @default(now())
+//   updated_at  DateTime @updatedAt
+
+//   // Relations
+//   project     Project  @relation(fields: [projectId], references: [id])
+
+//   @@map("whiteboards")
+// }
