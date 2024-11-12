@@ -13,19 +13,36 @@ export default function SignUp() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)   //TODO: Create loading screen
   const router = useRouter()
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    
+    setLoading(false)
     try {
-      const res = await axios.post('/api/auth/signup', {name, email, password}) 
-      if(res.status === 200){
-        console.log(res)
-      }
+      const response = await axios.post('/api/auth/signup', {email, password, name})
+      console.log("Sign up was successful")
+      router.push('/auth/login')
+
     } catch (error) {
-      console.log('phirse karou signup')
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          console.error('Signup error:', error.response.data.message)
+          setError(error.response.data.message || 'Failed to create an account')
+        } else if (error.request) {
+          console.error('No response received:', error.request)
+          setError('Server did not respond. Please try again later.')
+        } else {
+          console.error('Error in setting up request:', error.message)
+          setError('Unexpected error occurred. Please try again.')
+        }
+      } else {
+        console.error('Unexpected error:', error)
+        setError('An error occurred. Please try again later.')
+      }
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -35,7 +52,7 @@ export default function SignUp() {
         <h1 className="text-3xl font-bold">Create an account</h1>
         <p className="text-gray-500">Enter your information to get started with Projectify</p>
       </div>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSignup} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="name">Name</Label>
           <Input
@@ -72,7 +89,7 @@ export default function SignUp() {
       </form>
       <p className="text-center text-sm text-gray-600">
         Already have an account?{' '}
-        <Link href="/auth/signin" className="font-medium text-indigo-600 hover:text-indigo-500">
+        <Link href="/auth/login" className="font-medium text-indigo-600 hover:text-indigo-500">
           Sign in
         </Link>
       </p>

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import axios from 'axios'
 
 export default function SignIn() {
   const [email, setEmail] = useState('')
@@ -13,19 +14,24 @@ export default function SignIn() {
   const [error, setError] = useState('')
   const router = useRouter()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    
-    // Here you would typically make an API call to your backend to authenticate the user
-    // For this example, we'll just simulate a successful signin
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
     try {
-      // Simulated API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      console.log('User signed in:', { email, password })
-      router.push('/dashboard') // Redirect to dashboard after successful signin
+      const response = await axios.post('/api/auth/login', {email, password})
+
+      const { userId } = response.data;
+      //console.log(response)
+
+      router.push(`/dashboard/${userId}`)
+
     } catch (err) {
-      setError('Invalid email or password. Please try again.')
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || 'An error occurred')
+      } else {
+        setError('An unexpected error occurred')
+      }
     }
   }
 
@@ -36,7 +42,7 @@ export default function SignIn() {
           <h1 className="text-3xl font-bold">Welcome back</h1>
           <p className="text-gray-500">Enter your credentials to access your account</p>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -59,7 +65,7 @@ export default function SignIn() {
             />
           </div>
           {error && <p className="text-red-500 text-sm">{error}</p>}
-          <Button type="submit" className="w-full">Sign In</Button>
+          <Button type="submit" className="w-full">Log In</Button>
         </form>
         <p className="text-center text-sm text-gray-600">
           Don't have an account?{' '}
