@@ -13,7 +13,7 @@ export default function SignUp() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)   //TODO: Create loading screen
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -90,7 +90,7 @@ export default function SignUp() {
       <p className="text-center text-sm text-gray-600">
         Already have an account?{' '}
         <Link href="/auth/login" className="font-medium text-indigo-600 hover:text-indigo-500">
-          Sign in
+          Log in
         </Link>
       </p>
     </div>
