@@ -1,25 +1,31 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import { verifyToken } from '@/lib/auth' 
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { verifyToken } from '@/lib/auth';
 
-export function middleware(request: NextRequest) {
-  const token = request.cookies.get('token')?.value
-
-  console.log(token)
+export async function middleware(request: NextRequest) {
+  const token = request.cookies.get('token')?.value;
 
   if (!token) {
-    return NextResponse.redirect(new URL('/auth/login', request.url))
+    return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
-  const isValid = verifyToken(token)
+  try {
+    const payload = await verifyToken(token);
+    if (!payload) {
+      return NextResponse.redirect(new URL('/auth/login', request.url));
+    }
 
-  if (!isValid) {
-    return NextResponse.redirect(new URL('/auth/login', request.url))
+    request.nextUrl.searchParams.set('userId', payload.userId as string);
+    return NextResponse.rewrite(request.nextUrl);
+  } catch (error) {
+    console.error('Token verification failed:', error);
+    return NextResponse.json(
+      { error: 'Token verification failed' },
+      { status: 401 }
+    );
   }
-
-  return NextResponse.next()
 }
 
 export const config = {
-    matcher: ['/user/:path*', '/workspace/:path*', '/project/:path*']
-}
+  matcher: ['/user/:path*', '/workspace/:path*', '/project/:path*'],
+};
