@@ -5,6 +5,8 @@ import { verifyToken } from '@/lib/auth'
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value
 
+  console.log(token)
+
   if (!token) {
     return NextResponse.redirect(new URL('/auth/login', request.url))
   }
@@ -18,6 +20,6 @@ export function middleware(request: NextRequest) {
   return NextResponse.next()
 }
 
-// export const config = {
-//     matcher: ['/user/:path*', '/workspace/:path*', '/project/:path*']
-// }
+export const config = {
+    matcher: ['/user/:path*', '/workspace/:path*', '/project/:path*']
+}

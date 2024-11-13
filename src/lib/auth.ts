@@ -1,11 +1,25 @@
 import bcrypt from 'bcryptjs'
-import jwt from 'jsonwebtoken'
+import { SignJWT, jwtVerify } from 'jose';
 
-const JWT_SECRET = process.env.JWT_SECRET as string;
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
-if (!JWT_SECRET) {
-  throw new Error("JWT_SECRET environment variable is not defined");
+export const generateToken = async (userId: string) => {
+  return await new SignJWT({ userId })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setExpirationTime('1h')
+    .sign(JWT_SECRET);
+};
+
+export async function verifyToken(token: string) {
+  try {
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    return payload;
+  } catch (error) {
+    console.error("Token verification failed:", error);
+    return null;
+  }
 }
+
 
 export const hashPassword = async (password: string) => {
   const salt = await bcrypt.genSalt(10)
@@ -20,14 +34,4 @@ export async function comparePassword(password: string, hashedPassword: string) 
   return await bcrypt.compare(password, hashedPassword)
 }
 
-export const generateToken = (userId: String) => {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: '1h' })
-}
 
-export function verifyToken(token: string) {
-  try {
-    return jwt.verify(token, JWT_SECRET)
-  } catch (error) {
-    return null
-  }
-}

@@ -16,11 +16,14 @@ export async function POST(request: Request) {
   }
   
   const token = generateToken(user.id)
-  const response = NextResponse.json({ userId: user.id, message: 'Login successful' }, { status: 200 })
-
+  const response = NextResponse.json(
+    { userId: user.id, message: 'Login successful', token},
+    { status: 200 }
+  )
   response.cookies.set('token', token, {
     httpOnly: true,
     maxAge: 3600,
+    secure: process.env.NODE_ENV === 'production'
   })
 
   return response

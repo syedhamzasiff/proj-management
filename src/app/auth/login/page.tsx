@@ -17,14 +17,18 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
+  
     try {
-      const response = await axios.post('/api/auth/login', {email, password})
+      const response = await axios.post('/api/auth/login', { email, password });
+  
+      if (response.status === 200) {
+        const {userId, token} = response.data;
 
-      const { userId } = response.data;
+        localStorage.setItem('authToken', token);
 
-      router.push(`/user/${userId}/dashboard`)
-
+        router.replace(`/user/${userId}/dashboard`);
+      } 
+  
     } catch (err) {
       if (axios.isAxiosError(err)) {
         setError(err.response?.data?.message || 'An error occurred')
@@ -33,6 +37,7 @@ export default function Login() {
       }
     }
   }
+  
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
