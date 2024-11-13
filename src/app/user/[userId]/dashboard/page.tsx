@@ -9,31 +9,38 @@ import { Task, RecentTask, Deadline, ActivityData, DashboardData } from '@/types
 
 export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const params = useParams();
   const userId = params?.userId as string | undefined;
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       if (!userId) return;
-
+      
       try {
         const res = await fetch(`/api/dashboard/${userId}`);
         const result = await res.json();
         setData(result);
+        setIsLoading(false); // Set loading state to false once data is fetched
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
+        setIsLoading(false); // Also stop loading in case of an error
       }
     };
 
     fetchDashboardData();
   }, [userId]);
 
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-screen">Loading...</div>; // Show loading while fetching
+  }
+
   if (!userId) {
     return <div className="flex items-center justify-center h-screen">User ID not found</div>;
   }
 
   if (!data) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return <div className="flex items-center justify-center h-screen">Error loading data</div>;
   }
 
   const { userName, tasks, recentTasks, upcomingDeadlines, activityData } = data;
@@ -55,7 +62,6 @@ export default function Dashboard() {
         <Avatar className="h-12 w-12">
           <AvatarImage src="/placeholder-avatar.jpg" alt={userName} />
           <AvatarFallback>{userName ? userName[0] : "?"}</AvatarFallback>
-
         </Avatar>
       </header>
 

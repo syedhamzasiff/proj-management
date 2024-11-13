@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Calendar, dateFnsLocalizer, Views } from 'react-big-calendar'
 import {format} from 'date-fns/format'
 import {parse} from 'date-fns/parse'
@@ -138,6 +138,15 @@ const getPriorityColor = (priority: Task['priority']) => {
 
 export default function UserCalendar() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
+  if (!isClient) {
+    return null
+  }
 
   const handleSelectEvent = (task: Task) => {
     setSelectedTask(task)

@@ -73,20 +73,25 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedWorkspaces, setExpandedWorkspaces] = useState<string[]>(['1'])
   const [windowWidth, setWindowWidth] = useState(0)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true) 
     const handleResize = () => {
       const width = window.innerWidth
       setWindowWidth(width)
       setIsMobile(width < 640) // sm breakpoint
     }
     
-    // Initial call
-    handleResize()
+  handleResize()
     
-    window.addEventListener('resize', handleResize)
+  window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+
+  if (!mounted) {
+    return null
+  }
 
   // Updated sidebar state logic
   const getSidebarState = () => {

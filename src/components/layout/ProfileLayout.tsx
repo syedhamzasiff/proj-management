@@ -98,6 +98,12 @@ export default function ProfileLayout({ source, sourceId, userId }: ProfileLayou
   const [activityFilter, setActivityFilter] = useState<Activity['type'] | 'all'>('all')
   const [activitySort, setActivitySort] = useState<'newest' | 'oldest'>('newest')
 
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -138,6 +144,10 @@ export default function ProfileLayout({ source, sourceId, userId }: ProfileLayou
         return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
       }
     })
+
+  if (!isClient) {
+    return null // Prevent rendering until client-side JavaScript is available
+  }
 
   if (loading) {
     return (
@@ -215,80 +225,50 @@ export default function ProfileLayout({ source, sourceId, userId }: ProfileLayou
               <span className="font-semibold">{stats.ongoingTasks}</span>
             </div>
             <div className="flex justify-between">
-              <span>Avg. Completion Time:</span>
+              <span>Average Completion Time:</span>
               <span className="font-semibold">{stats.avgCompletionTime}</span>
             </div>
             <div className="flex justify-between">
               <span>Efficiency:</span>
               <span className="font-semibold">{stats.efficiency}%</span>
             </div>
-            {contextStats && (
-              <>
-                {contextStats.workspaceContributions && (
-                  <div className="flex justify-between">
-                    <span>Workspace Contributions:</span>
-                    <span className="font-semibold">{contextStats.workspaceContributions}</span>
-                  </div>
-                )}
-                {contextStats.projectDeadlinesMet && (
-                  <div className="flex justify-between">
-                    <span>Project Deadlines Met:</span>
-                    <span className="font-semibold">{contextStats.projectDeadlinesMet}</span>
-                  </div>
-                )}
-                {contextStats.codeReviewsCompleted && (
-                  <div className="flex justify-between">
-                    <span>Code Reviews Completed:</span>
-                    <span className="font-semibold">{contextStats.codeReviewsCompleted}</span>
-                  </div>
-                )}
-              </>
-            )}
           </CardContent>
         </Card>
       </div>
 
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Activity Timeline</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-between mb-4">
-            <Select value={activityFilter} onValueChange={(value: Activity['type'] | 'all') => setActivityFilter(value)}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter activities" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Activities</SelectItem>
-                <SelectItem value="task_completed">Tasks Completed</SelectItem>
-                <SelectItem value="comment_added">Comments Added</SelectItem>
-                <SelectItem value="project_joined">Projects Joined</SelectItem>
-                <SelectItem value="code_committed">Code Committed</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={activitySort} onValueChange={(value: 'newest' | 'oldest') => setActivitySort(value)}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Sort activities" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="newest">Newest First</SelectItem>
-                <SelectItem value="oldest">Oldest First</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {filteredActivities.map((activity) => (
-            <div key={activity.id} className="flex items-center space-x-4 py-2">
-              <CalendarDays className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">{activity.description}</p>
-                <p className="text-xs text-muted-foreground">
-                  {format(new Date(activity.timestamp), 'PPpp')}
-                </p>
+      <Tabs defaultValue="activities">
+        <TabsList>
+          <TabsTrigger value="activities">Activities</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="activities">
+          <Select
+            value={activityFilter}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Filter activities" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="task_completed">Task Completed</SelectItem>
+              <SelectItem value="comment_added">Comment Added</SelectItem>
+              <SelectItem value="project_joined">Project Joined</SelectItem>
+              <SelectItem value="code_committed">Code Committed</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <div className="mt-4">
+            {filteredActivities.map((activity) => (
+              <div key={activity.id} className="flex justify-between items-center py-2">
+                <div>{activity.description}</div>
+                <div className="text-sm text-muted-foreground">
+                  {format(new Date(activity.timestamp), 'yyyy-MM-dd HH:mm')}
+                </div>
               </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+            ))}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
