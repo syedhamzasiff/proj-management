@@ -10,6 +10,19 @@ export async function GET(request: Request, { params }: { params: { userId: stri
       return NextResponse.json({ error: 'User ID is required and must be a string' }, { status: 400 });
     }
 
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true, avatar_url: true }
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const today = new Date();
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+
     const tasks = await prisma.task.findMany({
       where: {
         assignments: {
