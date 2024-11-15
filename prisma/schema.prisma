@@ -43,9 +43,26 @@ model Workspace {
   // Relations
   members     ProjectWorkspaceMember[]
   projects    Project[]
+  WorkspaceInvitation WorkspaceInvitation[]
 
   @@map("workspaces")
+  
 }
+
+model WorkspaceInvitation {
+  id            String    @id @default(cuid())
+  workspaceId   String
+  invitedEmail  String
+  status        String    @default("PENDING") // PENDING, ACCEPTED, REJECTED
+  created_at    DateTime  @default(now())
+  expires_at    DateTime? // Optional: Expiration for the link
+
+  // Relations
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@map("workspace_invitations")
+}
+
 
 model ProjectWorkspaceMember {
   id            String       @id @default(cuid())
