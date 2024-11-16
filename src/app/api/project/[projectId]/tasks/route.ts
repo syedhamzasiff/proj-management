@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma"; 
 
 export async function GET(req: NextRequest, { params }: { params: { projectId: string } }) {
-  const { projectId } = params;
+  const { projectId } = await params;
   const view = req.nextUrl.searchParams.get("view") || "list";
 
   try {
