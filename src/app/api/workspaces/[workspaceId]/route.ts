@@ -55,8 +55,8 @@ export async function GET(req: NextRequest, { params }: { params: { workspaceId:
 
       
       const response =  NextResponse.json(formattedWorkspace);
-      console.log(formattedWorkspace)
-      console.log(response)
+      //console.log(formattedWorkspace)
+      //console.log(response)
 
       return response;
 
