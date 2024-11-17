@@ -127,6 +127,7 @@ model Task {
 }
 
 enum TaskStatus {
+  BACKLOG
   TODO
   IN_PROGRESS
   DONE
