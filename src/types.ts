@@ -2,7 +2,7 @@
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH';
 
 // Status options for tasks
-export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE';
+export type TaskStatus = 'BACKLOG' | 'TODO' | 'IN_PROGRESS' | 'DONE';
 
 // Base Task interface
 export interface Task {
@@ -16,8 +16,9 @@ export interface Task {
   updatedAt: string;
   isPinned: boolean;
   progress?: number;
-  assignedTo?: string;
+  assignedTo?: { id: string; name: string }[]; 
 }
+
 
 // Tasks overview statistics
 export interface TasksOverview {

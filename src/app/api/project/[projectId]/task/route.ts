@@ -4,8 +4,16 @@ import prisma from "@/lib/prisma";
 export async function POST(req: NextRequest, { params }: { params: { projectId: string } }) {
   const { projectId } = await params;
 
+  if (!projectId) {
+    return NextResponse.json({ error: "Project ID is missing" }, { status: 400 });
+  }
+
   try {
     const body = await req.json();
+    if (!body) {
+      return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
+    }
+
     const { title, description, status, priority, dueDate, assignedUserIds } = body;
 
     if (!title || priority == null || !status) {
@@ -34,20 +42,18 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
         due_date: dueDate ? new Date(dueDate) : null,
         assignments: assignedUserIds
           ? {
-              create: assignedUserIds.map((userId: string) => ({
-                userId,
-              })),
+              create: assignedUserIds.map((userId: string) => ({ userId })),
             }
           : undefined,
       },
       include: {
-        assignments: true, 
+        assignments: true,
       },
     });
 
     return NextResponse.json({ success: true, task }, { status: 201 });
   } catch (error: any) {
-    console.error("Error creating task:", error);
+    console.error("Error creating task:", error.message || error);
     return NextResponse.json({ error: "An error occurred while creating the task" }, { status: 500 });
   }
 }
