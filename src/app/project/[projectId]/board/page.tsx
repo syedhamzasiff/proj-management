@@ -170,13 +170,13 @@ export default function KanbanBoard() {
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!active || !over) return;
-
+  
     const draggedTaskId = active.id as string;
     const targetColumnId = over.id as TaskStatus;
-
+  
     const draggedTask = Object.values(columns).flatMap(column => column.tasks).find(task => task.id === draggedTaskId);
     if (!draggedTask || draggedTask.status === targetColumnId) return;
-
+  
     try {
       const response = await fetch(`/api/project/${projectId}/tasks/${draggedTaskId}`, {
         method: 'PATCH',
@@ -185,15 +185,25 @@ export default function KanbanBoard() {
         },
         body: JSON.stringify({ status: targetColumnId }),
       });
-
+  
       if (!response.ok) {
         throw new Error('Failed to update task status');
       }
-
+  
+      const updatedTask = await response.json();
+  
       setColumns(prevColumns => {
         const newColumns = { ...prevColumns };
+  
         newColumns[draggedTask.status].tasks = newColumns[draggedTask.status].tasks.filter(task => task.id !== draggedTaskId);
-        newColumns[targetColumnId].tasks.push({ ...draggedTask, status: targetColumnId });
+  
+        const targetColumnTasks = newColumns[targetColumnId].tasks;
+        const taskAlreadyInColumn = targetColumnTasks.some(task => task.id === updatedTask.id);
+  
+        if (!taskAlreadyInColumn) {
+          newColumns[targetColumnId].tasks.push(updatedTask);
+        }
+  
         return newColumns;
       });
     } catch (error) {
@@ -201,7 +211,8 @@ export default function KanbanBoard() {
       setError('Failed to update task status. Please try again.');
     }
   };
-
+  
+  
   const TaskCard = ({ task }: { task: Task }) => {
     const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
       id: task.id,
