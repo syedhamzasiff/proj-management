@@ -20,14 +20,9 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { Task, TaskStatus, Priority } from '@/types';
+import { Task, TaskStatus, Priority, Column } from '@/types';
 import { Checkbox } from '@/components/ui/checkbox';
 
-interface Column {
-  id: TaskStatus;
-  title: string;
-  tasks: Task[];
-}
 
 type Columns = Record<TaskStatus, Column>;
 
@@ -69,6 +64,13 @@ export default function KanbanBoard() {
       assignedUserIds: [],
     },
   });
+
+  const priorityMapping: Record<Priority, number> = {
+    LOW: 1,
+    MEDIUM: 2,
+    HIGH: 3,
+  };
+  
 
   useEffect(() => {
     if (!projectId) return;
@@ -122,7 +124,7 @@ export default function KanbanBoard() {
 
   const handleAddTask = async (values: FormTask) => {
     if (!projectId) return;
-
+  
     try {
       setIsLoading(true);
       const response = await fetch(`/api/project/${projectId}/task`, {
@@ -130,19 +132,20 @@ export default function KanbanBoard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...values,
+          priority: priorityMapping[values.priority], 
           dueDate: values.dueDate ? values.dueDate.toISOString() : null,
         }),
       });
-
+  
       const data = await response.json();
-
+  
       if (response.ok) {
         const newTask: Task = {
           ...data.task,
           dueDate: data.task.due_date ? new Date(data.task.due_date) : undefined,
           assignedUsers: data.task.assignments.map((assignment: any) => assignment.user),
         };
-
+  
         setColumns(prevColumns => ({
           ...prevColumns,
           [newTask.status]: {
@@ -163,7 +166,7 @@ export default function KanbanBoard() {
       setIsLoading(false);
     }
   };
-
+  
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!active || !over) return;
@@ -217,7 +220,10 @@ export default function KanbanBoard() {
             <h3 className="font-semibold mb-2">{task.title}</h3>
             <p className="text-sm text-gray-600 mb-2">{task.description}</p>
             <div className="text-sm text-gray-500 mb-2">
-              Assignees: {task.assignedTo?.map(user => user.name).join(', ') || 'Unassigned'}
+              Assignees: 
+              {task.assignments && task.assignments.length > 0
+                ? task.assignments.map((assignment) => assignment.user?.name).join(', ')
+                : 'Unassigned'}
             </div>
             <div className="text-sm">
               Priority:

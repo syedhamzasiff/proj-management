@@ -16,8 +16,16 @@ export interface Task {
   updatedAt: string;
   isPinned: boolean;
   progress?: number;
-  assignedTo?: { id: string; name: string }[]; 
+  assignments?: { user: { id: string; name: string; email?: string } }[]; 
 }
+
+
+export interface Column {
+  id: TaskStatus;
+  title: string;
+  tasks: Task[];
+}
+
 
 
 // Tasks overview statistics

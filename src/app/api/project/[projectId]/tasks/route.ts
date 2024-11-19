@@ -15,7 +15,6 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
       },
       orderBy: { priority: "desc" }, 
     });
-
    
     let responseData;
     if (view === "kanban") {
