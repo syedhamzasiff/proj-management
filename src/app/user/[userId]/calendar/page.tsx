@@ -1,26 +1,27 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import { Calendar, dateFnsLocalizer, Views } from 'react-big-calendar'
-import {format} from 'date-fns/format'
-import {parse} from 'date-fns/parse'
-import {startOfWeek} from 'date-fns/startOfWeek'
-import {getDay} from 'date-fns/getDay'
-import {enUS} from 'date-fns/locale/en-US'
-import 'react-big-calendar/lib/css/react-big-calendar.css'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { useEffect, useState, useMemo } from 'react';
+import { Calendar, dateFnsLocalizer, Views, View } from 'react-big-calendar';
+import { format, parse, startOfWeek, getDay, isSameDay, startOfDay, endOfDay } from 'date-fns';
+import { enUS } from 'date-fns/locale';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
+import { useParams } from 'next/navigation';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
-// Set up the localizer for react-big-calendar
 const locales = {
   'en-US': enUS,
-}
+};
 
 const localizer = dateFnsLocalizer({
   format,
@@ -28,185 +29,203 @@ const localizer = dateFnsLocalizer({
   startOfWeek,
   getDay,
   locales,
-})
+});
 
-// Define the Subtask type
-interface Subtask {
-  id: string
-  title: string
-  completed: boolean
-}
-
-// Define the Task type
 interface Task {
-  id: string
-  title: string
-  start: Date
-  end: Date
-  project: string
-  priority: 'Low' | 'Medium' | 'High'
-  description: string
-  subtasks: Subtask[]
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH';
+  due_date: string;
+  createdAt: string;
+  updatedAt: string;
+  projectId: string;
+  project: {
+    name: string;
+  };
+  assignments: Array<{
+    userId: string;
+  }>;
 }
 
-// Hardcoded tasks data
-const tasks: Task[] = [
-  {
-    id: '1',
-    title: 'Design new landing page',
-    start: new Date(2024, 10, 5, 10, 0),
-    end: new Date(2024, 10, 5, 12, 0),
-    project: 'Website Redesign',
-    priority: 'High',
-    description: 'Create a new design for the company website landing page',
-    subtasks: [
-      { id: '1a', title: 'Wireframe design', completed: true },
-      { id: '1b', title: 'Color scheme selection', completed: false },
-      { id: '1c', title: 'Typography choice', completed: false },
-    ],
-  },
-  {
-    id: '2',
-    title: 'Team meeting',
-    start: new Date(2024, 10, 6, 14, 0),
-    end: new Date(2024, 10, 6, 15, 0),
-    project: 'General',
-    priority: 'Medium',
-    description: 'Weekly team sync-up meeting',
-    subtasks: [
-      { id: '2a', title: 'Prepare agenda', completed: true },
-      { id: '2b', title: 'Review last week\'s action items', completed: false },
-    ],
-  },
-  {
-    id: '3',
-    title: 'Implement user authentication',
-    start: new Date(2024, 10, 7, 9, 0),
-    end: new Date(2024, 10, 7, 17, 0),
-    project: 'User Management System',
-    priority: 'High',
-    description: 'Implement secure user authentication system',
-    subtasks: [
-      { id: '3a', title: 'Set up authentication server', completed: false },
-      { id: '3b', title: 'Implement login functionality', completed: false },
-      { id: '3c', title: 'Implement registration functionality', completed: false },
-      { id: '3d', title: 'Implement password reset', completed: false },
-    ],
-  },
-  {
-    id: '4',
-    title: 'Write documentation',
-    start: new Date(2024, 10, 7, 13, 0),
-    end: new Date(2024, 10, 7, 16, 0),
-    project: 'API Development',
-    priority: 'Low',
-    description: 'Write comprehensive documentation for the new API',
-    subtasks: [
-      { id: '4a', title: 'Document endpoints', completed: false },
-      { id: '4b', title: 'Write usage examples', completed: false },
-      { id: '4c', title: 'Create API reference', completed: false },
-    ],
-  },
-  {
-    id: '5',
-    title: 'Code review',
-    start: new Date(2024, 10, 11, 11, 0),
-    end: new Date(2024, 10, 11, 12, 0),
-    project: 'Website Redesign',
-    priority: 'Medium',
-    description: 'Review and provide feedback on recent code changes',
-    subtasks: [
-      { id: '5a', title: 'Review pull requests', completed: false },
-      { id: '5b', title: 'Test implemented features', completed: false },
-      { id: '5c', title: 'Provide feedback', completed: false },
-    ],
-  },
-]
-
-const getPriorityColor = (priority: Task['priority']) => {
-  switch (priority) {
-    case 'Low':
-      return 'bg-green-100 text-green-800'
-    case 'Medium':
-      return 'bg-yellow-100 text-yellow-800'
-    case 'High':
-      return 'bg-red-100 text-red-800'
-    default:
-      return 'bg-gray-100 text-gray-800'
-  }
+interface CalendarEvent {
+  id: string;
+  title: string;
+  start: Date;
+  end: Date;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH';
+  project: string;
+  task: Task;
 }
+
+const priorityColors = {
+  LOW: 'bg-green-100 text-green-800 hover:bg-green-200',
+  MEDIUM: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200',
+  HIGH: 'bg-red-100 text-red-800 hover:bg-red-200',
+};
 
 export default function UserCalendar() {
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
-  const [isClient, setIsClient] = useState(false);
+  const { userId } = useParams();
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<View>(Views.MONTH);
+  const [date, setDate] = useState(new Date());
 
   useEffect(() => {
-    setIsClient(true)
-  }, [])
+    if (!userId) return;
 
-  if (!isClient) {
-    return null
-  }
+    const fetchTasks = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const response = await fetch(`/api/user/${userId}/calendar`);
+        if (!response.ok) throw new Error('Failed to fetch tasks');
 
-  const handleSelectEvent = (task: Task) => {
-    setSelectedTask(task)
-  }
+        const data = await response.json();
+        setTasks(data);
+      } catch (error) {
+        console.error('Error fetching tasks:', error);
+        setError('Failed to load tasks. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTasks();
+  }, [userId]);
+
+  const handleSelectEvent = (event: CalendarEvent) => {
+    setSelectedTask(event.task);
+  };
+
+  const calendarEvents: CalendarEvent[] = useMemo(() => {
+    return tasks.map(task => ({
+      id: task.id,
+      title: task.title,
+      start: startOfDay(new Date(task.due_date)),
+      end: endOfDay(new Date(task.due_date)),
+      priority: task.priority,
+      project: task.project.name,
+      task: task,
+    }));
+  }, [tasks]);
 
   const TaskDetails = ({ task }: { task: Task }) => (
     <div>
-      <p className="text-sm text-gray-500 mb-2">{task.project}</p>
+      <p className="text-sm text-gray-500 mb-2">{task.project.name}</p>
       <p className="mb-2">{task.description}</p>
-      <p className="text-sm mb-1"><strong>Start:</strong> {format(task.start, 'PPp')}</p>
-      <p className="text-sm mb-2"><strong>End:</strong> {format(task.end, 'PPp')}</p>
-      <Badge className={`mb-4 ${getPriorityColor(task.priority)}`}>
+      <p className="text-sm mb-2">
+        <strong>Due Date:</strong> {format(new Date(task.due_date), 'PPp')}
+      </p>
+      <Badge className={`mb-4 ${priorityColors[task.priority]}`}>
         {task.priority} Priority
       </Badge>
-      <h3 className="font-semibold mb-2">Subtasks:</h3>
-      <ul className="list-disc pl-5">
-        {task.subtasks.map((subtask) => (
-          <li key={subtask.id} className={subtask.completed ? 'line-through text-gray-500' : ''}>
-            {subtask.title}
-          </li>
-        ))}
-      </ul>
+      <p className="text-sm mb-1">
+        <strong>Status:</strong> {task.status}
+      </p>
     </div>
-  )
+  );
+
+  const dayPropGetter = (date: Date) => {
+    const tasksForDay = calendarEvents.filter(event => isSameDay(event.start, date));
+    if (tasksForDay.length > 0) {
+      return {
+        className: 'has-tasks',
+        style: {
+          backgroundColor: '#f0f9ff',
+          borderRadius: '4px',
+        },
+      };
+    }
+    return {};
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-red-500">{error}</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="w-full min-h-screen flex flex-col p-4">
-      <h1 className="text-2xl font-semibold mb-4">Your Calendar</h1>
-      <div className="flex-grow grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="md:col-span-3 flex-grow">
+    <div className="w-full min-h-screen flex flex-col p-4 space-y-4">
+      <h1 className="text-2xl font-semibold">Your Calendar</h1>
+      <div className="flex-grow grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <div className="lg:col-span-3 flex-grow">
           <Card className="h-full">
             <CardContent className="h-full p-4">
               <Calendar
                 localizer={localizer}
-                events={tasks}
+                events={calendarEvents}
                 startAccessor="start"
                 endAccessor="end"
-                style={{ height: '100%' }}
+                style={{ height: 'calc(100vh - 12rem)' }}
                 onSelectEvent={handleSelectEvent}
                 eventPropGetter={(event) => ({
-                  className: `${getPriorityColor(event.priority)} cursor-pointer`,
+                  className: `${priorityColors[event.priority]} cursor-pointer`,
                 })}
-                views={[Views.MONTH, Views.WEEK, Views.DAY]}
+                dayPropGetter={dayPropGetter}
+                views={{
+                  month: true,
+                  week: true,
+                  day: true,
+                }}
+                view={view}
+                onView={setView}
+                date={date}
+                onNavigate={setDate}
+                components={{
+                  toolbar: CustomToolbar,
+                  day: {
+                    event: (props) => (
+                      <div className="text-sm p-1">
+                        <strong>{props.event.title}</strong>
+                        <p>{props.event.project}</p>
+                      </div>
+                    ),
+                  },
+                }}
               />
             </CardContent>
           </Card>
         </div>
-        <div>
+        <div className="lg:col-span-1">
           <Card className="h-full">
             <CardHeader>
-              <CardTitle className="text-lg">Upcoming Tasks</CardTitle>
+              <CardTitle className="text-lg">Task List</CardTitle>
             </CardHeader>
             <CardContent>
-              {tasks.slice(0, 5).map((task) => (
-                <div key={task.id} className="mb-4 last:mb-0 cursor-pointer" onClick={() => setSelectedTask(task)}>
-                  <h3 className="font-semibold text-sm">{task.title}</h3>
-                  <p className="text-xs text-gray-500">{format(task.start, 'PPp')}</p>
-                  <Badge className={`mt-1 text-xs ${getPriorityColor(task.priority)}`}>{task.priority}</Badge>
-                </div>
-              ))}
+              <ScrollArea className="h-[calc(100vh-16rem)]">
+                {tasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className="mb-4 last:mb-0 cursor-pointer hover:bg-gray-100 p-2 rounded-md transition-colors"
+                    onClick={() => setSelectedTask(task)}
+                  >
+                    <h3 className="font-semibold text-sm">{task.title}</h3>
+                    <p className="text-xs text-gray-500">
+                      Due: {format(new Date(task.due_date), 'PP')}
+                    </p>
+                    <Badge
+                      className={`mt-1 text-xs ${priorityColors[task.priority]}`}
+                    >
+                      {task.priority}
+                    </Badge>
+                  </div>
+                ))}
+              </ScrollArea>
             </CardContent>
           </Card>
         </div>
@@ -217,8 +236,50 @@ export default function UserCalendar() {
             <DialogTitle>{selectedTask?.title}</DialogTitle>
           </DialogHeader>
           {selectedTask && <TaskDetails task={selectedTask} />}
+          <DialogFooter>
+            <Button onClick={() => setSelectedTask(null)}>Close</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }
+
+const CustomToolbar = ({ onNavigate, label, onView, view }: any) => (
+  <div className="flex justify-between items-center mb-4">
+    <div>
+      <Button variant="outline" onClick={() => onNavigate('PREV')}>
+        <ChevronLeft className="h-4 w-4" />
+      </Button>
+      <Button variant="outline" onClick={() => onNavigate('NEXT')} className="ml-2">
+        <ChevronRight className="h-4 w-4" />
+      </Button>
+      <Button variant="outline" onClick={() => onNavigate('TODAY')} className="ml-2">
+        Today
+      </Button>
+    </div>
+    <h2 className="text-xl font-semibold">{label}</h2>
+    <div>
+      <Button
+        variant={view === Views.MONTH ? "default" : "outline"}
+        onClick={() => onView(Views.MONTH)}
+        className="mr-2"
+      >
+        Month
+      </Button>
+      <Button
+        variant={view === Views.WEEK ? "default" : "outline"}
+        onClick={() => onView(Views.WEEK)}
+        className="mr-2"
+      >
+        Week
+      </Button>
+      <Button
+        variant={view === Views.DAY ? "default" : "outline"}
+        onClick={() => onView(Views.DAY)}
+      >
+        Day
+      </Button>
+    </div>
+  </div>
+);
