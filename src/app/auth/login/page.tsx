@@ -1,43 +1,37 @@
 'use client'
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import axios from 'axios'
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import axios from 'axios';
 
 export default function Login() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const router = useRouter()
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-  
+
     try {
       const response = await axios.post('/api/auth/login', { email, password });
-  
+
       if (response.status === 200) {
-        const {userId, token} = response.data;
-
-        localStorage.setItem('authToken', token);
-
-        router.replace(`/user/${userId}/dashboard`);
-      } 
-  
+        router.replace('/dashboard'); 
+      }
     } catch (err) {
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || 'An error occurred')
+        setError(err.response?.data?.message || 'An error occurred');
       } else {
-        setError('An unexpected error occurred')
+        setError('An unexpected error occurred');
       }
     }
-  }
-  
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -81,5 +75,5 @@ export default function Login() {
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -3,35 +3,42 @@ import { SignJWT, jwtVerify } from 'jose';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
-export async function generateToken(userId: string): Promise<string> {
-  const token =  await new SignJWT({ userId })
+export const generateTokens = async (userId: string) => {
+  const accessToken = await new SignJWT({ userId })
     .setProtectedHeader({ alg: 'HS256' })
-    .setExpirationTime('1h')
+    .setIssuedAt()
+    .setExpirationTime('24h') // 1 hour
     .sign(JWT_SECRET);
-    return token
-}
 
-export async function verifyToken(token: string): Promise<{ userId: string } | null> {
+  const refreshToken = await new SignJWT({ userId })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('7d') // 7 days
+    .sign(JWT_SECRET);
+
+  return { accessToken, refreshToken };
+};
+
+export const verifyToken = async (token: string) => {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
-    return { userId: payload.userId as string };
+    return payload as { userId: string };
   } catch (error) {
     console.error('Token verification failed:', error);
     return null;
   }
-}
+};
 
 export const hashPassword = async (password: string) => {
-  const salt = await bcrypt.genSalt(10)
-  return bcrypt.hash(password, salt)
-}
+  const salt = await bcrypt.genSalt(10);
+  return bcrypt.hash(password, salt);
+};
 
 export const verifyPassword = async (password: string, hash: string) => {
-  return bcrypt.compare(password, hash)
-}
+  return bcrypt.compare(password, hash);
+};
 
-export async function comparePassword(password: string, hashedPassword: string) {
-  return await bcrypt.compare(password, hashedPassword)
-}
-
+export const comparePassword = async (password: string, hashedPassword: string) => {
+  return await bcrypt.compare(password, hashedPassword);
+};
 

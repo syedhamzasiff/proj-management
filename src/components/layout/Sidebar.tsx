@@ -8,25 +8,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-  Home,
-  FolderKanban,
-  Calendar,
-  Building2,
-  Settings,
-  HelpCircle,
-  Menu,
-  ChevronDown,
-  Plus,
-  Pin,
-  Search
-} from 'lucide-react'
+import { Home, FolderKanban, Calendar, Building2, Settings, HelpCircle, Menu, ChevronDown, Plus, Search, Loader2 } from 'lucide-react'
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
 interface SidebarProps {
   isOpen: boolean
   onToggle: () => void
+  userId: string
 }
 
 interface NavItem {
@@ -38,56 +27,53 @@ interface NavItem {
 interface Workspace {
   id: string
   name: string
-  projects: Project[]
+  projects: { id: string; name: string }[]
 }
 
-interface Project {
-  id: string
-  name: string
-  isPinned?: boolean
-}
-
-// Mock data - replace with real data from your backend
-const workspaces: Workspace[] = [
-  {
-    id: '1',
-    name: 'Personal',
-    projects: [
-      { id: 'p1', name: 'Side Project', isPinned: true },
-      { id: 'p2', name: 'Blog Redesign' },
-    ]
-  },
-  {
-    id: '2',
-    name: 'Team Alpha',
-    projects: [
-      { id: 'p3', name: 'Project Management Tool', isPinned: true },
-      { id: 'p4', name: 'Client Dashboard' },
-    ]
-  }
-]
-
-export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
+export default function Sidebar({ isOpen, onToggle, userId }: SidebarProps) {
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [expandedWorkspaces, setExpandedWorkspaces] = useState<string[]>(['1'])
+  const [expandedWorkspaces, setExpandedWorkspaces] = useState<string[]>([])
   const [windowWidth, setWindowWidth] = useState(0)
   const [mounted, setMounted] = useState(false)
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     setMounted(true) 
+
+    const fetchWorkspaces = async () => {
+      try {
+        setIsLoading(true)
+        const response = await fetch(`/api/user/${userId}/sidebar`)
+        if (!response.ok) throw new Error('Failed to fetch workspaces')
+        const data = await response.json()
+        setWorkspaces(data)
+        if (data.length > 0) {
+          setExpandedWorkspaces([data[0].id])
+        }
+      } catch (err) {
+        console.error('Error fetching workspaces:', err)
+        setError('Failed to load workspaces. Please try again later.')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
     const handleResize = () => {
       const width = window.innerWidth
       setWindowWidth(width)
       setIsMobile(width < 640) // sm breakpoint
     }
     
-  handleResize()
+    handleResize()
+    fetchWorkspaces()
     
-  window.addEventListener('resize', handleResize)
+    window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [])
+  }, [userId])
 
   if (!mounted) {
     return null
@@ -203,58 +189,65 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
                   </Button>
                 </div>
                 
-                {workspaces.map((workspace) => (
-                  <div key={workspace.id} className="mb-2">
-                    <Button
-                      variant="ghost"
-                      size="default"
-                      className="w-full px-4 justify-between h-8"
-                      onClick={() => toggleWorkspace(workspace.id)}
-                    >
-                      <div className="flex items-center">
-                        <Building2 className="h-4 w-4 mr-2" />
-                        <span className="text-sm">{workspace.name}</span>
-                      </div>
-                      <ChevronDown 
-                        className={cn(
-                          "h-4 w-4 transition-transform",
-                          expandedWorkspaces.includes(workspace.id) ? "transform rotate-180" : ""
-                        )}
-                      />
-                    </Button>
-                    
-                    {expandedWorkspaces.includes(workspace.id) && (
-                      <div className="ml-4 space-y-1">
-                        {workspace.projects.map((project) => (
+                {isLoading ? (
+                  <div className="flex justify-center items-center py-4">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  </div>
+                ) : error ? (
+                  <div className="px-4 py-2 text-sm text-red-500">{error}</div>
+                ) : (
+                  workspaces.map((workspace) => (
+                    <div key={workspace.id} className="mb-2">
+                      <Button
+                        variant="ghost"
+                        size="default"
+                        className="w-full px-4 justify-between h-8"
+                        onClick={() => toggleWorkspace(workspace.id)}
+                      >
+                        <div className="flex items-center">
+                          <Building2 className="h-4 w-4 mr-2" />
+                          <span className="text-sm">{workspace.name}</span>
+                        </div>
+                        <ChevronDown 
+                          className={cn(
+                            "h-4 w-4 transition-transform",
+                            expandedWorkspaces.includes(workspace.id) ? "transform rotate-180" : ""
+                          )}
+                        />
+                      </Button>
+                      
+                      {expandedWorkspaces.includes(workspace.id) && (
+                        <div className="ml-4 space-y-1">
+                          {workspace.projects.map((project) => (
+                            <Button
+                              key={project.id}
+                              variant="ghost"
+                              size="default"
+                              className="w-full px-4 justify-between h-8"
+                              asChild
+                            >
+                              <Link href={`/project/${project.id}`}>
+                                <div className="flex items-center">
+                                  <FolderKanban className="h-4 w-4 mr-2" />
+                                  <span className="text-sm">{project.name}</span>
+                                </div>
+                              </Link>
+                            </Button>
+                          ))}
                           <Button
-                            key={project.id}
                             variant="ghost"
                             size="default"
-                            className="w-full px-4 justify-between h-8"
-                            asChild
+                            className="w-full px-4 justify-start h-8 text-muted-foreground"
+                            onClick={() => router.push('/project/new')}
                           >
-                            <Link href={`/project/${project.id}`}>
-                              <div className="flex items-center">
-                                <FolderKanban className="h-4 w-4 mr-2" />
-                                <span className="text-sm">{project.name}</span>
-                              </div>
-                              {project.isPinned && <Pin className="h-3 w-3" />}
-                            </Link>
+                            <Plus className="h-4 w-4 mr-2" />
+                            <span className="text-sm">New Project</span>
                           </Button>
-                        ))}
-                        <Button
-                          variant="ghost"
-                          size="default"
-                          className="w-full px-4 justify-start h-8 text-muted-foreground"
-                          onClick={() => router.push('/project/new')} // Route to new project page
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          <span className="text-sm">New Project</span>
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
               </div>
             ) : (
               // Collapsed workspace view
@@ -274,7 +267,7 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
 
          {/* Bottom Section */}
          <div className="py-4 space-y-2">
-          <NavItem icon={Settings} label="Settings" href="/profile/{userId}/settings" />
+          <NavItem icon={Settings} label="Settings" href={`/profile/${userId}/settings`} />
           <NavItem icon={HelpCircle} label="Help" href="/help" />
         </div>
 
