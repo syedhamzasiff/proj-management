@@ -1,110 +1,173 @@
 'use client'
 
-import { useState, ChangeEvent } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { Upload } from 'lucide-react';
+import { useState, ChangeEvent } from 'react'
+import { useRouter } from 'next/navigation'
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Label } from '@/components/ui/label'
+import { useToast } from '@/components/hooks/use-toast'
+import { Upload, Loader2 } from 'lucide-react'
 
-interface ProfileSettingsProps {
-  onSaveChanges: (field: string) => void;
-}
+export default function ProfileSettings() {
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [about, setAbout] = useState('')
+  const [profilePicture, setProfilePicture] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  
+  const router = useRouter()
+  const { toast } = useToast()
 
-const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onSaveChanges }) => {
-  const [name, setName] = useState<string>('');
-  const [username, setUsername] = useState<string>('');
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-  const [confirmPassword, setConfirmPassword] = useState<string>('');
-  const [about, setAbout] = useState<string>('');
-  const [profilePicture, setProfilePicture] = useState<string | null>(null);
-
-  // To handle profile picture preview
-   const handleProfilePictureChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleProfilePictureChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
     if (file) {
-      setProfilePicture(URL.createObjectURL(file));
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setProfilePicture(reader.result as string)
+      }
+      reader.readAsDataURL(file)
     }
-  };
+  }
+
+  const handleSaveChanges = async (field: string) => {
+    setIsLoading(true)
+    try {
+      let body: Record<string, any> = {}
+      switch (field) {
+        case 'name':
+          body.name = name
+          break
+        case 'email':
+          body.email = email
+          break
+        case 'password':
+          if (password !== confirmPassword) {
+            toast({
+              title: "Error",
+              description: "Passwords do not match",
+              variant: "destructive",
+            })
+            return
+          }
+          body.password = password
+          body.confirmPassword = confirmPassword
+          break
+        case 'about':
+          body.about = about
+          break
+        case 'profile-picture':
+          body.profilePicture = profilePicture
+          break
+        default:
+          throw new Error('Invalid field')
+      }
+
+      const response = await fetch(`/api/profile/${field}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to update profile')
+      }
+
+      toast({
+        title: "Success",
+        description: `${field.charAt(0).toUpperCase() + field.slice(1)} updated successfully`,
+      })
+      router.refresh()
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'An error occurred',
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
-    <Card>
+    <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
         <CardTitle>Account Settings</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div>
-            <Input
-              type="Name"
-              value={name}
-              //onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
-            />
-            <Button onClick={() => onSaveChanges('Name')} variant="default" className="mt-2">
-              Save Name
-            </Button>
-          </div>
-          <div>
-            <Input
-              type="Username"
-              value={username}
-              //onChange={(e) => setUsername(e.target.value)}
-              placeholder="Your username"
-            />
-            <Button onClick={() => onSaveChanges('Username')} variant="default" className="mt-2">
-              Save Username
-            </Button>
-          </div>
-          <div>
-            <Input
-              type="email"
-              value={email}
-              //onChange={(e) => setEmail(e.target.value)}
-              placeholder="Your email"
-            />
-            <Button onClick={() => onSaveChanges('Email')} variant="default" className="mt-2">
-              Save Email
-            </Button>
-          </div>
-          <div>
-            <Textarea
-              value={about}
-              //onChange={(e) => setAbout(e.target.value)}
-              placeholder="Write something about yourself"
-            />
-            <Button onClick={() => onSaveChanges('About')} variant="default" className="mt-2">
-              Save About
-            </Button>
-          </div>
+      <CardContent className="space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="name">Name</Label>
+          <Input
+            id="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Your name"
+          />
+          <Button onClick={() => handleSaveChanges('name')} disabled={isLoading}>
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Save Name
+          </Button>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div>
-            <Input
-              type="password"
-              value={password}
-              //onChange={(e) => setPassword(e.target.value)}
-              placeholder="New password"
-            />
-            <Input
-              type="password"
-              value={confirmPassword}
-              //onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm new password"
-            />
-            <Button onClick={() => onSaveChanges('Password')} variant="default" className="mt-2">
-              Update Password
-            </Button>
-          </div>
-          <div>
-            <label className="block font-medium text-gray-700 mb-2">Profile Picture</label>
-            <div className="flex items-center">
-              <label htmlFor="profile-picture" className="cursor-pointer">
-                <div className="bg-gray-200 rounded-full p-2 hover:bg-gray-300 transition-colors">
-                  <Upload className="text-gray-600" />
+
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Your email"
+          />
+          <Button onClick={() => handleSaveChanges('email')} disabled={isLoading}>
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Save Email
+          </Button>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="password">New Password</Label>
+          <Input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="New password"
+          />
+          <Input
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Confirm new password"
+          />
+          <Button onClick={() => handleSaveChanges('password')} disabled={isLoading}>
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Update Password
+          </Button>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Profile Picture</Label>
+          <div className="flex items-center space-x-4">
+            <Avatar className="w-20 h-20">
+              <AvatarImage src={profilePicture || undefined} alt="Profile picture" />
+              <AvatarFallback>
+                {name ? name.charAt(0).toUpperCase() : 'U'}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <Label htmlFor="profile-picture" className="cursor-pointer">
+                <div className="bg-secondary text-secondary-foreground hover:bg-secondary/80 inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 px-4 py-2">
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload new picture
                 </div>
-              </label>
+              </Label>
               <input
                 id="profile-picture"
                 type="file"
@@ -112,94 +175,21 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onSaveChanges }) => {
                 onChange={handleProfilePictureChange}
                 className="hidden"
               />
-              {profilePicture && (
-                <div className="ml-4">
-                  <img
-                    src={profilePicture}
-                    alt="Profile Preview"
-                    className="w-16 h-16 rounded-full object-cover"
-                  />
-                  <Button
-                    onClick={() => onSaveChanges('Profile Picture')}
-                    variant="default"
-                    className="mt-2"
-                  >
-                    Save Picture
-                  </Button>
-                </div>
-              )}
             </div>
           </div>
+          {profilePicture && (
+            <Button onClick={() => handleSaveChanges('profile-picture')} disabled={isLoading}>
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Save Profile Picture
+            </Button>
+          )}
         </div>
       </CardContent>
       <CardFooter>
-        <p className="text-gray-500 text-sm">
-          Changes will be saved automatically. You can update your information at any time.
+        <p className="text-sm text-muted-foreground">
+          Changes are saved individually for each field. You can update your information at any time.
         </p>
       </CardFooter>
     </Card>
-  );
-};
-
-export default ProfileSettings;
-
-
-/*import { useState } from 'react';
-
-function ProfileSettings() {
-    const [name, setName] = useState('');
-    const [about, setAbout] = useState('');
-    const [message, setMessage] = useState('');
-
-    const handleSaveName = async () => {
-        // API call to save name
-        const response = await fetch('/api/profile/updateName', {
-            method: 'PUT',
-            body: JSON.stringify({ name }),
-        });
-        if (response.ok) {
-            setMessage('Name updated successfully');
-        } else {
-            setMessage('Failed to update name');
-        }
-    };
-
-    const handleSaveAbout = async () => {
-        // API call to save about
-        const response = await fetch('/api/profile/updateAbout', {
-            method: 'PUT',
-            body: JSON.stringify({ about }),
-        });
-        if (response.ok) {
-            setMessage('About section updated successfully');
-        } else {
-            setMessage('Failed to update about section');
-        }
-    };
-
-    return (
-        <div>
-            <h2>Account Settings</h2>
-            <div>
-                <label>Name:</label>
-                <input 
-                    type="text" 
-                    value={name} 
-                    onChange={(e) => setName(e.target.value)} 
-                />
-                <button onClick={handleSaveName}>Save Name</button>
-            </div>
-            <div>
-                <label>About:</label>
-                <textarea 
-                    value={about} 
-                    onChange={(e) => setAbout(e.target.value)} 
-                />
-                <button onClick={handleSaveAbout}>Save About</button>
-            </div>
-            {message && <p>{message}</p>}
-        </div>
-    );
+  )
 }
-}
-*/
