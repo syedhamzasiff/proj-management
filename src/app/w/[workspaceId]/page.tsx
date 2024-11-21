@@ -9,17 +9,54 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
-import { Users, Folder, BarChart2, Clock, Plus, User } from 'lucide-react'
-import { Workspace } from '@/types'
+import { Users, Folder, BarChart2, User, Plus } from 'lucide-react'
+
+interface Member {
+  id: string
+  name: string
+  avatar: string | null
+  online: boolean
+}
+
+interface Project {
+  id: string
+  name: string
+  description: string | null
+  progress: number
+  totalTasks: number
+  completedTasks: number
+}
+
+interface WorkspaceData {
+  id: string
+  name: string
+  description: string | null
+  type: 'personal' | 'shared'
+  stats: {
+    totalProjects: number
+    completedProjects: number
+    totalTasks: number
+    completedTasks: number
+  }
+  owner: {
+    id: string
+    name: string
+    avatar: string | null
+  } | null
+  members: Member[]
+  projects: Project[]
+}
 
 export default function WorkspaceDashboard() {
-  const [workspace, setWorkspace] = useState<Workspace | null>(null)
+  const [workspace, setWorkspace] = useState<WorkspaceData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const params = useParams()
-  const workspaceId = params.workspaceId
+  const workspaceId = params.workspaceId as string
 
   useEffect(() => {
     const fetchWorkspace = async () => {
+      setIsLoading(true)
       try {
         const response = await fetch(`/api/workspaces/${workspaceId}`)
         if (!response.ok) throw new Error("Failed to fetch workspace data")
@@ -27,14 +64,17 @@ export default function WorkspaceDashboard() {
         setWorkspace(data)
       } catch (error) {
         console.error("Error fetching workspace:", error)
+        setError("Failed to load workspace data. Please try again later.")
+      } finally {
+        setIsLoading(false)
       }
     }
     fetchWorkspace()
   }, [workspaceId])
 
-  if (!workspace) return null
-
-  console.log(workspace)
+  if (isLoading) return <div>Loading...</div>
+  if (error) return <div>Error: {error}</div>
+  if (!workspace) return <div>No workspace data found</div>
 
   const isPersonal = workspace.type === "personal"
 
@@ -47,12 +87,20 @@ export default function WorkspaceDashboard() {
             {isPersonal ? "Personal Workspace" : "Shared Workspace"}
           </Badge>
         </div>
-        {!isPersonal && (
-          <Button variant="outline">
-            <Users className="mr-2 h-4 w-4" />
-            Manage Team
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {!isPersonal && (
+            <Button variant="outline">
+              <Users className="mr-2 h-4 w-4" />
+              Manage Team
+            </Button>
+          )}
+          <Link href={`/w/${workspace.id}/new-project`}>
+            <Button variant="default">
+              <Plus className="mr-2 h-4 w-4" />
+              New Project
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
@@ -92,12 +140,12 @@ export default function WorkspaceDashboard() {
               <div className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
                   <AvatarImage 
-                    src={workspace.members[0].avatar || ''} 
-                    alt={workspace.members[0].name || 'Default Name'} 
+                    src={workspace.owner?.avatar || ''} 
+                    alt={workspace.owner?.name || 'Owner'} 
                   />
-                  <AvatarFallback>{workspace.members[0].name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                  <AvatarFallback>{workspace.owner?.name.split(' ').map(n => n[0]).join('') || 'O'}</AvatarFallback>
                 </Avatar>
-                <span className="text-sm">{workspace.members[0].name}</span>
+                <span className="text-sm">{workspace.owner?.name || 'Owner'}</span>
               </div>
             ) : (
               <>
@@ -107,16 +155,6 @@ export default function WorkspaceDashboard() {
                 </p>
               </>
             )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{workspace.activities.length}</div>
-            <p className="text-xs text-muted-foreground">in the last 7 days</p>
           </CardContent>
         </Card>
       </div>
@@ -131,8 +169,8 @@ export default function WorkspaceDashboard() {
                   <div className="relative">
                     <Avatar className="h-12 w-12">
                       <AvatarImage 
-                        src={workspace.members[0].avatar || ''} // Fallback to empty string if null
-                        alt={workspace.members[0].name || 'Default Name'} // Fallback to 'Default Name' if null
+                        src={member.avatar || ''} 
+                        alt={member.name} 
                       />
                       <AvatarFallback>{member.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                     </Avatar>
@@ -147,63 +185,38 @@ export default function WorkspaceDashboard() {
         </>
       )}
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">Projects</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {workspace.projects.length ? (
-          workspace.projects.map(project => (
-            <Card key={project.id}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-lg font-medium">{project.name}</CardTitle>
-                <div className="relative h-10 w-10">
-                  <Progress value={project.progress} className="h-10 w-10 rounded-full" />
-                  <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm font-bold">
-                    {project.progress}%
-                  </span>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  {project.completedTasks} / {project.tasks} tasks completed
-                </p>
-                <Link href={`/projects/${project.id}`}>
-                  <Button variant="link" className="p-0 h-auto">View Project</Button>
-                </Link>
-              </CardContent>
-            </Card>
-          ))
-        ) : (
-          <Card className="flex items-center justify-center">
-            <Button variant="ghost">
-              <Plus className="mr-2 h-4 w-4" />
-              Add New Project
-            </Button>
-          </Card>
-        )}
+      <div className="flex items-center justify-between mt-8 mb-4">
+        <h2 className="text-2xl font-semibold">Projects</h2>
+        <Link href={`/w/${workspace.id}/new-project`}>
+          <Button variant="outline">
+            <Plus className="mr-2 h-4 w-4" />
+            Add New Project
+          </Button>
+        </Link>
       </div>
-
-      <h2 className="text-2xl font-semibold mt-8 mb-4">Recent Activity</h2>
-      <Card>
-        <CardContent className="p-6">
-          {workspace.activities.map((activity, index) => (
-            <div key={activity.id}>
-              <div className="flex items-center mb-4">
-                <Avatar className="h-8 w-8 mr-2">
-                  <AvatarImage src={`/avatars/${activity.user.toLowerCase().replace(' ', '-')}.jpg`} alt={activity.user} />
-                  <AvatarFallback>{activity.user.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <p className="text-sm">
-                    <span className="font-medium">{activity.user}</span> {activity.action}{' '}
-                    <span className="font-medium">{activity.project}</span>
-                  </p>
-                  <p className="text-xs text-muted-foreground">{activity.time}</p>
-                </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {workspace.projects.map(project => (
+          <Card key={project.id}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-lg font-medium">{project.name}</CardTitle>
+              <div className="relative h-10 w-10">
+                <Progress value={project.progress} className="h-10 w-10 rounded-full" />
+                <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm font-bold">
+                  {project.progress}%
+                </span>
               </div>
-              {index !== workspace.activities.length - 1 && <Separator />}
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                {project.completedTasks} / {project.totalTasks} tasks completed
+              </p>
+              <Link href={`/project/${project.id}`}>
+                <Button variant="link" className="p-0 h-auto">View Project</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   )
 }
