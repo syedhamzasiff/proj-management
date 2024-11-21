@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { useUser } from '@/context/UserContext'
 
 export default function Dashboard() {
-  const { userId } = useUser();  // Get the userId from the context
+  const { userId } = useUser();  
   const [data, setData] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -29,8 +29,9 @@ export default function Dashboard() {
 
     const fetchDashboardData = async () => {
       try {
-        setIsLoading(true)
-        const response = await fetch(`/api/dashboard/${userId}`)
+        setIsLoading(true);
+        setError(null);
+        const response = await fetch(`/api/user/${userId}/dashboard`)
         if (!response.ok) {
           throw new Error('Failed to fetch dashboard data')
         }

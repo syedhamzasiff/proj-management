@@ -173,19 +173,25 @@ export default function Sidebar({ isOpen, onToggle}: SidebarProps) {
         {/* Main Content */}
         <ScrollArea className="flex-1">
           <div className="py-2">
-            <NavItem icon={Home} label="Dashboard" href="/dashboard" />
-            <NavItem icon={Calendar} label="Calendar" href="/calendar" />
+            <NavItem icon={Home} label="Dashboard" href="/u/dashboard" />
+            <NavItem icon={Calendar} label="Calendar" href="/u/calendar" />
 
             {/* Workspaces Section */}
             {sidebarState.width === 'w-64' ? (
               <div className="mt-4">
                 <div className="px-4 flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-muted-foreground">Workspaces</span>
+                  <Button 
+                    variant="ghost"
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground"
+                    onClick={() => router.push('/u/workspace-d')}
+                  >
+                    Workspaces
+                  </Button>
                   <Button 
                     variant="ghost" 
                     size="icon" 
                     className="h-5 w-5"
-                    onClick={() => router.push('/workspace/new')} 
+                    onClick={() => router.push('/w/new')} 
                   >
                     <Plus className="h-4 w-4" />
                   </Button>

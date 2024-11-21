@@ -18,6 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useUser } from '@/context/UserContext';
 
 const locales = {
   'en-US': enUS,
@@ -66,13 +67,15 @@ const priorityColors = {
 };
 
 export default function UserCalendar() {
-  const { userId } = useParams();
+  const { userId } = useUser();  
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<View>(Views.MONTH);
   const [date, setDate] = useState(new Date());
+
+  //console.log("userId: ", userId)
 
   useEffect(() => {
     if (!userId) return;
