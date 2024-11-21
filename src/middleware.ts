@@ -1,37 +1,35 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { verifyToken } from '@/lib/auth';
+import { NextRequest, NextResponse } from 'next/server';
+import { decrypt } from './lib/auth';
+import { cookies } from 'next/headers';
+
+export const protectedRoutes =  ['/u/', '/p/', '/w/'];
+const publicRoutes = ['/auth/login', '/auth/signup', '/'];
 
 export async function middleware(request: NextRequest) {
-  const accessToken = request.cookies.get('accessToken')?.value;
+  const path = request.nextUrl.pathname;
+  const isProtectedRoute = protectedRoutes.includes(path);
+  const isPublicRoute = publicRoutes.includes(path);
 
-  // If no token exists, redirect to the login page
-  if (!accessToken) {
-    return NextResponse.redirect(new URL('/auth/login', request.url));
+  const cookie = (await cookies()).get('session')?.value;
+  const session = await decrypt(cookie);
+
+  if (isProtectedRoute && !session?.userId) {
+    return NextResponse.redirect(new URL('/auth/login', request.nextUrl));
   }
 
-  try {
-    // Verify the token
-    const payload = await verifyToken(accessToken);
-
-    // If verification fails (e.g., expired or invalid token), redirect to login
-    if (!payload) {
-      return NextResponse.redirect(new URL('/auth/login', request.url));
-    }
-
-    // Add userId to the request URL for subsequent handling
-    request.nextUrl.searchParams.set('userId', payload.userId);
-
-    // Proceed to the requested page
-    return NextResponse.next();
-  } catch (error) {
-    // Handle token verification errors (e.g., invalid format, expired, etc.)
-    console.error('Token verification failed:', error);
-
-    return NextResponse.redirect(new URL('/auth/login', request.url));
+  if (
+    isPublicRoute &&
+    session?.userId &&
+    !request.nextUrl.pathname.startsWith('/u/dashboard')
+  ) {
+    return NextResponse.redirect(new URL('/u/dashboard', request.nextUrl));
   }
+
+  return NextResponse.next();
 }
 
-export const config = {
-  matcher: ['/user/:path*', '/workspace/:path*', '/project/:path*'], // Add protected routes here
-};
+
+
+
+
+

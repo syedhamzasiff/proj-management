@@ -11,11 +11,11 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Home, FolderKanban, Calendar, Building2, Settings, HelpCircle, Menu, ChevronDown, Plus, Search, Loader2 } from 'lucide-react'
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
+import { useUser } from '@/context/UserContext'
 
 interface SidebarProps {
   isOpen: boolean
   onToggle: () => void
-  userId: string
 }
 
 interface NavItem {
@@ -30,7 +30,8 @@ interface Workspace {
   projects: { id: string; name: string }[]
 }
 
-export default function Sidebar({ isOpen, onToggle, userId }: SidebarProps) {
+export default function Sidebar({ isOpen, onToggle}: SidebarProps) {
+  const { userId, isAuth } = useUser();
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -45,6 +46,7 @@ export default function Sidebar({ isOpen, onToggle, userId }: SidebarProps) {
     setMounted(true) 
 
     const fetchWorkspaces = async () => {
+      if (!userId) return;
       try {
         setIsLoading(true)
         const response = await fetch(`/api/user/${userId}/sidebar`)
@@ -73,7 +75,7 @@ export default function Sidebar({ isOpen, onToggle, userId }: SidebarProps) {
     
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [userId])
+  }, [])
 
   if (!mounted) {
     return null
@@ -267,7 +269,7 @@ export default function Sidebar({ isOpen, onToggle, userId }: SidebarProps) {
 
          {/* Bottom Section */}
          <div className="py-4 space-y-2">
-          <NavItem icon={Settings} label="Settings" href={`/profile/${userId}/settings`} />
+          <NavItem icon={Settings} label="Settings" href={`/u/settings`} />
           <NavItem icon={HelpCircle} label="Help" href="/help" />
         </div>
 

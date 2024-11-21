@@ -4,11 +4,9 @@ import { useState, useEffect } from 'react'
 import Sidebar from '@/components/layout/Sidebar'
 
 export default function DashboardLayout({
-  children,
-  userId
+  children
 }: {
   children: React.ReactNode
-  userId: string
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [windowWidth, setWindowWidth] = useState(0)
@@ -49,7 +47,6 @@ export default function DashboardLayout({
       <Sidebar 
         isOpen={sidebarOpen} 
         onToggle={() => setSidebarOpen(!sidebarOpen)} 
-        userId={userId}
       />
       <main className={`transition-all duration-300 ${getMainContentMargin()} pt-4 px-4`}>
         {children}

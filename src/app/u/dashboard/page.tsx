@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -10,23 +9,25 @@ import { CalendarIcon, CheckCircleIcon, ClockIcon, PinIcon } from 'lucide-react'
 import { Task, DashboardData } from '@/types'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
+import { useUser } from '@/context/UserContext'
 
 export default function Dashboard() {
+  const { userId } = useUser();  // Get the userId from the context
   const [data, setData] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [userName, setUserName] = useState<string>('')
-  const params = useParams()
-  const userId = typeof params?.userId === 'string' ? params.userId : ''
+
+  //console.log(userId);
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      if (!userId) {
-        setError('User ID is required')
-        setIsLoading(false)
-        return
-      }
+    if (!userId) {
+      setError('User ID is required')
+      setIsLoading(false)
+      return
+    }
 
+    const fetchDashboardData = async () => {
       try {
         setIsLoading(true)
         const response = await fetch(`/api/dashboard/${userId}`)
@@ -44,39 +45,43 @@ export default function Dashboard() {
     }
 
     fetchDashboardData()
-  }, [userId])
+  }, [userId]) // Ensure the effect runs when userId changes
 
   if (error) {
     return <ErrorState message={error} />
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <header className="mb-6">
-        <div className="flex items-center space-x-4">
-          <Avatar className="h-10 w-10">
-            <AvatarImage src="/path/to/user-avatar.jpg" alt={userName} />
-            <AvatarFallback>{userName.charAt(0)}</AvatarFallback>
-          </Avatar>
-          <h1 className="text-xl font-semibold text-gray-900">{`Welcome, ${userName}`}</h1>
+    <div className="flex h-screen bg-gray-100">
+      <main className="flex-1 overflow-y-auto">
+        <div className="min-h-screen bg-gray-50 p-6">
+          <header className="mb-6">
+            <div className="flex items-center space-x-4">
+              <Avatar className="h-10 w-10">
+                <AvatarImage src="/path/to/user-avatar.jpg" alt={userName} />
+                <AvatarFallback>{userName.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <h1 className="text-xl font-semibold text-gray-900">{`Welcome, ${userName}`}</h1>
+            </div>
+          </header>
+          {isLoading ? (
+            <LoadingState />
+          ) : (
+            data && (
+              <div className="grid grid-cols-2 gap-4">
+                <TasksOverviewCard data={data.tasksOverview} />
+                <PinnedTasksCard tasks={data.pinnedTasks} />
+                <UpcomingDeadlinesCard tasks={data.upcomingDeadlines} />
+                <InProgressTasksCard tasks={data.inProgressTasks} />
+              </div>
+            )
+          )}
         </div>
-      </header>
-      
-      {isLoading ? (
-        <LoadingState />
-      ) : (
-        data && (
-          <div className="grid grid-cols-2 gap-4">
-            <TasksOverviewCard data={data.tasksOverview} />
-            <PinnedTasksCard tasks={data.pinnedTasks} />
-            <UpcomingDeadlinesCard tasks={data.upcomingDeadlines} />
-            <InProgressTasksCard tasks={data.inProgressTasks} />
-          </div>
-        )
-      )}
+      </main>
     </div>
   )
 }
+
 
 function TasksOverviewCard({ data }: { data: DashboardData['tasksOverview'] }) {
   return (
