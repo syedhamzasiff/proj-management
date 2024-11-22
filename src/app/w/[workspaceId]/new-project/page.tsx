@@ -74,7 +74,7 @@ export default function NewProjectPage() {
           <ToastAction altText="View project">View project</ToastAction>
         ),
       })
-      router.push(`/p/${data.project.id}`, undefined);
+      router.push(`/project/${data.project.id}`, undefined);
     } catch (error) {
       toast({
         title: "Error",

@@ -30,11 +30,11 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
       }));
     } else if (view === "calendar") {
       responseData = tasks
-        .filter((task) => task.due_date)
+        .filter((task) => task.due_date) 
         .map((task) => ({
           id: task.id,
           title: task.title,
-          due_date: task.due_date,
+          due_date: task.due_date,  
           isCompleted: task.isCompleted,
           priority: task.priority,
         }));

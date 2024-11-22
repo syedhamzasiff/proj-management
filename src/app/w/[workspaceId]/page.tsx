@@ -210,7 +210,7 @@ export default function WorkspaceDashboard() {
               <p className="text-sm text-muted-foreground">
                 {project.completedTasks} / {project.totalTasks} tasks completed
               </p>
-              <Link href={`/project/${project.id}`}>
+              <Link href={`/p/${project.id}`}>
                 <Button variant="link" className="p-0 h-auto">View Project</Button>
               </Link>
             </CardContent>

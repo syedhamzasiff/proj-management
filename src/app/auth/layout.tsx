@@ -17,7 +17,7 @@ export default function AuthLayout({
 }) {
   return (
     <div>
-      <main className="container mx-auto mt-36 flex max-w-7xl justify-center">
+      <main className="container flex justify-center">
         {children}
       </main>
     </div>

@@ -234,7 +234,7 @@ export default function Sidebar({ isOpen, onToggle}: SidebarProps) {
                               className="w-full px-4 justify-between h-8"
                               asChild
                             >
-                              <Link href={`/project/${project.id}`}>
+                              <Link href={`/p/${project.id}`}>
                                 <div className="flex items-center">
                                   <FolderKanban className="h-4 w-4 mr-2" />
                                   <span className="text-sm">{project.name}</span>
@@ -246,7 +246,7 @@ export default function Sidebar({ isOpen, onToggle}: SidebarProps) {
                             variant="ghost"
                             size="default"
                             className="w-full px-4 justify-start h-8 text-muted-foreground"
-                            onClick={() => router.push('/project/new')}
+                            onClick={() => router.push(`w/${workspace.id}/new-project`)}
                           >
                             <Plus className="h-4 w-4 mr-2" />
                             <span className="text-sm">New Project</span>
@@ -279,7 +279,8 @@ export default function Sidebar({ isOpen, onToggle}: SidebarProps) {
           <NavItem icon={HelpCircle} label="Help" href="/help" />
         </div>
 
-        {/* User Profile */}
+        {/* User Profile 
+        
         <div className="p-4 border-t">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -310,6 +311,9 @@ export default function Sidebar({ isOpen, onToggle}: SidebarProps) {
             )}
           </Tooltip>
         </div>
+
+        */}
+        
 
         {/* Toggle Button - Show on all non-mobile screens */}
         {!isMobile && (
