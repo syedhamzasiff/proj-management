@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import Navbar from '@/components/projects/Navbar'
 
 export default function ProjectLayout({ children }: { children: React.ReactNode }) {
@@ -13,20 +13,37 @@ export default function ProjectLayout({ children }: { children: React.ReactNode 
   const projectId = pathParts[2]
   const currentPath = pathParts[3]
   
-  // If we're at /projects/[id], use 'overview' as the current tab
   const currentTab = !currentPath ? 'overview' : currentPath
+
+  const [projectName, setProjectName] = useState('Loading...')
+
+  useEffect(() => {
+    const fetchProjectDetails = async () => {
+      try {
+        const res = await fetch(`/api/project/${projectId}`)
+        if (!res.ok) throw new Error('Failed to fetch project details')
+        const data = await res.json()
+        setProjectName(data.name)
+      } catch (error) {
+        console.error('Error fetching project details:', error)
+        setProjectName('Unknown Project')
+      }
+    }
+
+    fetchProjectDetails()
+  }, [projectId])
 
   const handleTabChange = (value: string) => {
     if (value === 'overview') {
-      router.push(`/project/${projectId}`)
+      router.push(`/p/${projectId}`)
     } else {
-      router.push(`/project/${projectId}/${value}`)
+      router.push(`/p/${projectId}/${value}`)
     }
   }
 
   return (
     <div className="container mx-auto p-6">
-      <Navbar projectName="Project Alpha" />
+      <Navbar projectName={projectName} href={`/p/${projectId}`} />
 
       <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-4">
         <TabsList>

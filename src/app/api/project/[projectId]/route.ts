@@ -35,8 +35,8 @@ export async function GET(
     }
 
     const currentSprint = {
-      name: 'Current Sprint', // You might want to add a sprint model to your schema if you need more detailed sprint information
-      endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Assuming 2-week sprints
+      name: 'Current Sprint',
+      endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], 
     }
 
     const response = {

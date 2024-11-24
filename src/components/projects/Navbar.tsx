@@ -1,4 +1,3 @@
-// components/Navbar.tsx
 import { Button } from "@/components/ui/button"
 import { Settings } from "lucide-react"
 import { useRouter } from "next/navigation";
