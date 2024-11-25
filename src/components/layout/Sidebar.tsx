@@ -41,6 +41,13 @@ export default function Sidebar({ isOpen, onToggle}: SidebarProps) {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [userProfile, setUserProfile] = useState<{
+    name: string;
+    email: string;
+    avatar_url: string | null;
+  } | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  
 
   useEffect(() => {
     setMounted(true) 
@@ -64,6 +71,25 @@ export default function Sidebar({ isOpen, onToggle}: SidebarProps) {
       }
     }
 
+    const fetchUserProfile = async () => {
+      if (!userId) return;
+      try {
+        setLoadingProfile(true);
+        const response = await fetch(`/api/user/${userId}`);
+        if (!response.ok) throw new Error('Failed to fetch user profile.');
+        const data = await response.json();
+        setUserProfile({
+          name: data.name,
+          email: data.email,
+          avatar_url: data.avatar_url,
+        });
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+
     const handleResize = () => {
       const width = window.innerWidth
       setWindowWidth(width)
@@ -72,10 +98,11 @@ export default function Sidebar({ isOpen, onToggle}: SidebarProps) {
     
     handleResize()
     fetchWorkspaces()
+    fetchUserProfile()
     
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [])
+  }, [userId])
 
   if (!mounted) {
     return null
@@ -132,6 +159,20 @@ export default function Sidebar({ isOpen, onToggle}: SidebarProps) {
       {sidebarState.width !== 'w-64' && <TooltipContent side="right">{label}</TooltipContent>}
     </Tooltip>
   )
+
+  async function fetchUserProfile(userId: string) {
+    try {
+      const response = await fetch(`/api/user/${userId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch user profile.');
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      throw error;
+    }
+  }
+  
 
   return (
     <TooltipProvider>
@@ -279,40 +320,44 @@ export default function Sidebar({ isOpen, onToggle}: SidebarProps) {
           <NavItem icon={HelpCircle} label="Help" href="/help" />
         </div>
 
-        {/* User Profile 
-        
+        {/* User Profile */}
         <div className="p-4 border-t">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                variant="ghost" 
-                className={cn(
-                  "w-full h-12",
-                  sidebarState.width === 'w-64' ? 'justify-start px-2' : 'justify-center'
-                )}
-              >
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="/placeholder-avatar.jpg" alt="User" />
-                  <AvatarFallback>JD</AvatarFallback>
-                </Avatar>
-                {sidebarState.width === 'w-64' && (
-                  <div className="ml-3 text-left">
-                    <p className="text-sm font-medium">John Doe</p>
-                    <p className="text-xs text-muted-foreground">john@example.com</p>
-                  </div>
-                )}
-              </Button>
-            </TooltipTrigger>
-            {sidebarState.width !== 'w-64' && (
-              <TooltipContent side="right">
-                <p className="font-medium">John Doe</p>
-                <p className="text-xs text-muted-foreground">john@example.com</p>
-              </TooltipContent>
-            )}
-          </Tooltip>
+          {loadingProfile ? (
+            <div className="flex justify-center items-center">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  className={cn(
+                    "w-full h-12",
+                    sidebarState.width === 'w-64' ? 'justify-start px-2' : 'justify-center'
+                  )}
+                >
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={userProfile?.avatar_url || '/placeholder-avatar.jpg'} alt={userProfile?.name || 'User'} />
+                    <AvatarFallback>{userProfile?.name?.[0] || 'U'}</AvatarFallback>
+                  </Avatar>
+                  {sidebarState.width === 'w-64' && userProfile && (
+                    <div className="ml-3 text-left">
+                      <p className="text-sm font-medium">{userProfile.name}</p>
+                      <p className="text-xs text-muted-foreground">{userProfile.email}</p>
+                    </div>
+                  )}
+                </Button>
+              </TooltipTrigger>
+              {sidebarState.width !== 'w-64' && userProfile && (
+                <TooltipContent side="right">
+                  <p className="font-medium">{userProfile.name}</p>
+                  <p className="text-xs text-muted-foreground">{userProfile.email}</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          )}
         </div>
 
-        */}
         
 
         {/* Toggle Button - Show on all non-mobile screens */}
