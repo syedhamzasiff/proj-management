@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/components/hooks/use-toast'
-import { Upload, Loader2 } from 'lucide-react'
+import { Upload, Loader2, LogOut } from 'lucide-react'
+import { deleteSession } from '@/lib/auth'
 
 export default function ProfileSettings() {
   const [name, setName] = useState('')
@@ -96,10 +97,31 @@ export default function ProfileSettings() {
     }
   }
 
+  const handleLogout = async () => {
+    try {
+      await deleteSession()
+      toast({
+        title: "Success",
+        description: "You have been logged out successfully",
+      })
+      router.push('/auth/login') 
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
   return (
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
         <CardTitle>Account Settings</CardTitle>
+        <Button variant="destructive" onClick={handleLogout}>
+          <LogOut className="mr-2 h-4 w-4" />
+          Sign Out
+        </Button>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">

@@ -101,10 +101,6 @@ export async function login(
   };
 }
 
-export async function logout() {
-  deleteSession();
-}
-
 export async function encrypt(payload: SessionPayload) {
   return new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
@@ -157,8 +153,6 @@ export async function verifySession() {
   return { isAuth: true, userId };
 }
 
-
-
 export async function updateSession() {
   const session = (await cookies()).get('session')?.value;
   const payload = await decrypt(session);
@@ -179,7 +173,7 @@ export async function updateSession() {
 
 export async function deleteSession() {
   (await cookies()).delete('session');
-  redirect('/login');
+  redirect('/auth/login');
 }
 
 
