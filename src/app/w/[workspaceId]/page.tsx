@@ -9,13 +9,20 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
-import { Users, Folder, BarChart2, User, Plus } from 'lucide-react'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Users, Folder, BarChart2, User, Plus, Settings, Mail, Copy } from 'lucide-react'
 
 interface Member {
   id: string
   name: string
   avatar: string | null
   online: boolean
+  role: string
 }
 
 interface Project {
@@ -51,6 +58,8 @@ export default function WorkspaceDashboard() {
   const [workspace, setWorkspace] = useState<WorkspaceData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [inviteLink, setInviteLink] = useState('')
   const params = useParams()
   const workspaceId = params.workspaceId as string
 
@@ -72,6 +81,29 @@ export default function WorkspaceDashboard() {
     fetchWorkspace()
   }, [workspaceId])
 
+  const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (workspace) {
+      setWorkspace({ ...workspace, name: event.target.value })
+    }
+  }
+
+  const handleDescriptionChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (workspace) {
+      setWorkspace({ ...workspace, description: event.target.value })
+    }
+  }
+
+  const handleSaveChanges = async () => {
+    // Implement the API call to save changes
+    console.log("Saving changes:", workspace)
+  }
+
+  const generateInviteLink = () => {
+    // Implement the API call to generate a one-time invite link
+    const link = `https://projectify.com/invite/${workspaceId}/${Math.random().toString(36).substring(7)}`
+    setInviteLink(link)
+  }
+
   if (isLoading) return <div>Loading...</div>
   if (error) return <div>Error: {error}</div>
   if (!workspace) return <div>No workspace data found</div>
@@ -87,20 +119,92 @@ export default function WorkspaceDashboard() {
             {isPersonal ? "Personal Workspace" : "Shared Workspace"}
           </Badge>
         </div>
-        <div className="flex gap-2">
-          {!isPersonal && (
+        <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+          <DialogTrigger asChild>
             <Button variant="outline">
-              <Users className="mr-2 h-4 w-4" />
-              Manage Team
+              <Settings className="mr-2 h-4 w-4" />
+              Settings
             </Button>
-          )}
-          <Link href={`/w/${workspace.id}/new-project`}>
-            <Button variant="default">
-              <Plus className="mr-2 h-4 w-4" />
-              New Project
-            </Button>
-          </Link>
-        </div>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Workspace Settings</DialogTitle>
+              <DialogDescription>
+                Manage your workspace settings and team members here.
+              </DialogDescription>
+            </DialogHeader>
+            <Tabs defaultValue="general" className="mt-4">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="general">General</TabsTrigger>
+                <TabsTrigger value="members">Members</TabsTrigger>
+              </TabsList>
+              <TabsContent value="general" className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Workspace Name</Label>
+                  <Input
+                    id="name"
+                    value={workspace.name}
+                    onChange={handleNameChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={workspace.description || ''}
+                    onChange={handleDescriptionChange}
+                    rows={4}
+                  />
+                </div>
+                <Button onClick={handleSaveChanges}>Save Changes</Button>
+              </TabsContent>
+              <TabsContent value="members" className="space-y-4">
+                <div className="space-y-4">
+                  {workspace.members.map((member) => (
+                    <div key={member.id} className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={member.avatar || ''} alt={member.name} />
+                          <AvatarFallback>{member.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                        </Avatar>
+                        <span>{member.name}</span>
+                      </div>
+                      <Select defaultValue={member.role}>
+                        <SelectTrigger className="w-[120px]">
+                          <SelectValue placeholder="Role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="member">Member</SelectItem>
+                          <SelectItem value="viewer">Viewer</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-2">
+                  <Label>Invite New Members</Label>
+                  <div className="flex space-x-2">
+                    <Button onClick={generateInviteLink} className="flex-grow">
+                      Generate Invite Link
+                    </Button>
+                    <Button variant="outline">
+                      <Mail className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {inviteLink && (
+                    <div className="mt-2 flex items-center space-x-2">
+                      <Input value={inviteLink} readOnly className="flex-grow" />
+                      <Button variant="outline" onClick={() => navigator.clipboard.writeText(inviteLink)}>
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
