@@ -49,13 +49,13 @@ export default function NewWorkspace() {
         title: "Error",
         description: "User ID not found. Please log in again.",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
-
-    setIsLoading(true)
+  
+    setIsLoading(true);
     try {
-      const response = await fetch(`/api/user/${userId}/workspace`, {
+      const response = await fetch(`/api/workspaces`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -64,29 +64,30 @@ export default function NewWorkspace() {
           ...data,
           userId,
         }),
-      })
-
+      });
+  
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to create workspace')
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create workspace');
       }
-
-      const result = await response.json()
+  
+      const result = await response.json();
       toast({
         title: "Success",
-        description: "Workspace created successfully",
-      })
-      router.push(`/workspace/${result.workspace.id}`)
+        description: `Workspace created successfully. ${result.workspace.inviteLink ? `Invite link: ${result.workspace.inviteLink}` : ''}`,
+      });
+      router.push(`/w/${result.workspace.id}`);
     } catch (error) {
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : 'An error occurred',
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
+  
 
   return (
     <Card className="w-full max-w-2xl mx-auto">

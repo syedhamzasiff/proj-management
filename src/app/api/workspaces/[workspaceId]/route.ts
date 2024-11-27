@@ -41,7 +41,7 @@ export async function GET(req: NextRequest, { params }: { params: { workspaceId:
           0
         ),
       },
-      owner: workspace.members.find(member => member.role === 'OWNER')?.user || null,
+      owner: workspace.members.find(member => member.workspaceRole === 'LEADER')?.user || null,
       members: workspace.members.map((member) => ({
         id: member.user.id,
         name: member.user.name,

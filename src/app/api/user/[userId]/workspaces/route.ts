@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma';
 
 export async function GET(request: Request, { params }: { params: { userId: string } }) {
   try {
-    const { userId } = params;
+    const { userId } = await params;
 
     if (!userId || typeof userId !== 'string') {
       return NextResponse.json({ error: 'User ID is required and must be a string' }, { status: 400 });

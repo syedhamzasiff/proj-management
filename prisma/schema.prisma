@@ -63,13 +63,23 @@ model WorkspaceInvitation {
   @@map("workspace_invitations")
 }
 
+enum WorkspaceRole {
+  LEADER
+  MEMBER
+}
+
+enum ProjectRole {
+  LEADER
+  MEMBER
+}
 
 model ProjectWorkspaceMember {
   id            String       @id @default(cuid())
   userId        String
   workspaceId   String?      
   projectId     String?    
-  role          String
+  workspaceRole WorkspaceRole @default(MEMBER)
+  projectRole   ProjectRole   @default(MEMBER)
   joined_at     DateTime  @default(now())
   left_at       DateTime?
 
