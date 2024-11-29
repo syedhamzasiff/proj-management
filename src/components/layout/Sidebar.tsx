@@ -287,7 +287,7 @@ export default function Sidebar({ isOpen, onToggle}: SidebarProps) {
                             variant="ghost"
                             size="default"
                             className="w-full px-4 justify-start h-8 text-muted-foreground"
-                            onClick={() => router.push(`w/${workspace.id}/new-project`)}
+                            onClick={() => router.push(`../w/${workspace.id}/new-project`)}
                           >
                             <Plus className="h-4 w-4 mr-2" />
                             <span className="text-sm">New Project</span>

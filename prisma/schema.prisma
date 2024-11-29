@@ -100,7 +100,6 @@ model Project {
   description String?
   status      String
   start_date  DateTime
-  end_date    DateTime?
   created_at  DateTime  @default(now())
   updated_at  DateTime  @updatedAt
 

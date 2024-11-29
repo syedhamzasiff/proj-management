@@ -15,18 +15,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/components/hooks/use-toast"
 import { ToastAction } from "@/components/ui/toast"
 import { CalendarIcon, Loader2 } from 'lucide-react'
-import { format } from "date-fns"
+import { format, isAfter, startOfToday } from "date-fns"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 const formSchema = z.object({
   name: z.string().min(1, "Project name is required").max(100, "Project name must be 100 characters or less"),
   description: z.string().max(500, "Description must be 500 characters or less").optional(),
-  status: z.enum(["PLANNING", "IN_PROGRESS", "COMPLETED", "ON_HOLD"]),
-  startDate: z.date({
-    required_error: "Start date is required",
-  }),
-  endDate: z.date().optional(),
+  status: z.enum(["PLANNING", "IN_PROGRESS", "COMPLETED", "ON_HOLD"]).default("PLANNING"),
+  endDate: z.date().refine(date => isAfter(date, startOfToday()), {
+    message: "End date must be after today's date",
+  }).optional(),
 })
 
 export default function NewProjectPage() {
@@ -42,7 +41,6 @@ export default function NewProjectPage() {
       name: "",
       description: "",
       status: "PLANNING",
-      startDate: new Date(),
     },
   })
 
@@ -57,7 +55,6 @@ export default function NewProjectPage() {
         body: JSON.stringify({
           workspaceId,
           ...values,
-          startDate: values.startDate.toISOString(),
           endDate: values.endDate?.toISOString(),
         }),
       })
@@ -74,7 +71,7 @@ export default function NewProjectPage() {
           <ToastAction altText="View project">View project</ToastAction>
         ),
       })
-      router.push(`/project/${data.project.id}`, undefined);
+      router.push(`/p/${data.project.id}`)
     } catch (error) {
       toast({
         title: "Error",
@@ -161,40 +158,20 @@ export default function NewProjectPage() {
               )}
             />
             <FormField
-              control={form.control}
-              name="startDate"
+              name='startDate'
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Start Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={`w-full pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) =>
-                          date < new Date("1900-01-01")
-                        }
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <FormControl>
+                    <Input
+                      value={format(new Date(), "PPP")}
+                      readOnly
+                      disabled
+                      className="cursor-not-allowed"
+                    />
+                  </FormControl>
                   <FormDescription>
-                    The date when the project is set to begin.
+                    The start date is fixed to today's date.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -228,8 +205,9 @@ export default function NewProjectPage() {
                         selected={field.value}
                         onSelect={field.onChange}
                         disabled={(date) =>
-                          date < new Date("1900-01-01")
+                          date <= startOfToday()
                         }
+                        initialFocus
                       />
                     </PopoverContent>
                   </Popover>

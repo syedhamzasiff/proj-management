@@ -3,9 +3,10 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export async function POST(request: Request) {
+export async function POST(request: Request, { params }: { params: { workspaceId: string } }) {
   try {
-    const { workspaceId, name, description, status, startDate, endDate } = await request.json();
+    const { name, description, endDate, status } = await request.json();
+    const workspaceId = params.workspaceId;
 
     if (!workspaceId || typeof workspaceId !== 'string') {
       return NextResponse.json(
@@ -28,12 +29,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!startDate || isNaN(Date.parse(startDate))) {
-      return NextResponse.json(
-        { error: 'Invalid or missing startDate' },
-        { status: 400 }
-      );
-    }
+    const startDate = new Date();
 
     // Validate optional fields
     if (description && typeof description !== 'string') {
@@ -57,7 +53,7 @@ export async function POST(request: Request) {
         name,
         description: description || null,
         status,
-        start_date: new Date(startDate),
+        start_date: startDate,
         end_date: endDate ? new Date(endDate) : null,
       },
     });
