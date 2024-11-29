@@ -1,25 +1,11 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { PrismaNeon } from '@prisma/adapter-neon';
 import { PrismaClient } from '@prisma/client';
-import ws from 'ws';
 
-const prismaClientSingleton = () => {
-    neonConfig.webSocketConstructor = ws
-    const connectionString = `${process.env.DATABASE_URL}`
-
-    const pool = new Pool({ connectionString });
-    const adapter = new PrismaNeon(pool)
-    const prisma = new PrismaClient( {adapter} )
-
-    return prisma;
+declare global {
+  var prisma: PrismaClient | undefined;
 }
 
-declare const globalThis: {
-    prismaGlobal: ReturnType<typeof prismaClientSingleton>
-} & typeof global
+const prisma = global.prisma || new PrismaClient();
 
-const prisma = globalThis.prismaGlobal ?? prismaClientSingleton()
+if (process.env.NODE_ENV === 'development') global.prisma = prisma;
 
-export default prisma
-
-if (process.env.NODE_ENV !== 'production') globalThis.prismaGlobal = prisma
+export default prisma;
