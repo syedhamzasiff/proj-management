@@ -1,13 +1,10 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams } from 'next/navigation'
 import { Calendar, dateFnsLocalizer, View, Views } from 'react-big-calendar'
-import {format} from 'date-fns/format'
-import {parse} from 'date-fns/parse'
-import {startOfWeek} from 'date-fns/startOfWeek'
-import {getDay} from 'date-fns/getDay'
-import {enUS} from 'date-fns/locale/en-US'
+import { format, parse, startOfWeek, getDay } from 'date-fns'
+import { enUS } from 'date-fns/locale'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -15,14 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ChevronDown, Filter } from 'lucide-react'
+import { ChevronDown, Filter, Loader2 } from 'lucide-react'
 import { TabsContent } from '@/components/ui/tabs'
 
-// Set up the localizer for react-big-calendar
-const locales = {
-  'en-US': enUS,
-}
-
+const locales = { 'en-US': enUS }
 const localizer = dateFnsLocalizer({
   format,
   parse,
@@ -31,17 +24,17 @@ const localizer = dateFnsLocalizer({
   locales,
 })
 
-// Task type definition
 interface Task {
   id: string
   title: string
-  status: 'To Do' | 'In Progress' | 'Done'
-  priority: 'Low' | 'Medium' | 'High'
-  assignee: string
-  dueDate: Date
+  status: TaskStatus
+  isCompleted: boolean
+  isPinned: boolean
+  priority: TaskPriority
+  due_date: string
+  assignedUsers: { id: string; name: string }[]
 }
 
-// Event type for calendar
 interface CalendarEvent {
   id: string
   title: string
@@ -51,180 +44,210 @@ interface CalendarEvent {
   resource: Task
 }
 
-// Mock tasks data
-const initialTasks: Task[] = [
-  { id: '1', title: 'Design new landing page', status: 'To Do', priority: 'High', assignee: 'John Doe', dueDate: new Date(2024, 2, 15) },
-  { id: '2', title: 'Implement user authentication', status: 'In Progress', priority: 'Medium', assignee: 'Jane Smith', dueDate: new Date(2024, 2, 20) },
-  { id: '3', title: 'Refactor database schema', status: 'In Progress', priority: 'Low', assignee: 'Bob Johnson', dueDate: new Date(2024, 2, 25) },
-  { id: '4', title: 'Set up CI/CD pipeline', status: 'Done', priority: 'High', assignee: 'Alice Williams', dueDate: new Date(2024, 2, 10) },
-  { id: '5', title: 'Write API documentation', status: 'To Do', priority: 'Medium', assignee: 'Charlie Brown', dueDate: new Date(2024, 2, 30) },
-]
+type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH'
+type TaskStatus = 'BACKLOG' | 'TODO' | 'IN_PROGRESS' | 'DONE'
 
-interface TaskCardProps {
-  event: {
-    resource: Task
-  }
-}
-
-const TaskCard = ({ event }: TaskCardProps) => {
+const TaskCard = ({ event }: { event: { resource: Task } }) => {
   const { resource: task } = event
-  
-  const getStatusColor = (status: Task['status']) => {
+
+  const getStatusColor = (status: TaskStatus | undefined) => {
+    if (!status) return 'bg-gray-200 text-gray-800'
     switch (status) {
-      case 'To Do': return 'bg-yellow-200 text-yellow-800'
-      case 'In Progress': return 'bg-blue-200 text-blue-800'
-      case 'Done': return 'bg-green-200 text-green-800'
+      case 'TODO': return 'bg-yellow-200 text-yellow-800'
+      case 'IN_PROGRESS': return 'bg-blue-200 text-blue-800'
+      case 'DONE': return 'bg-green-200 text-green-800'
+      case 'BACKLOG': return 'bg-gray-300 text-gray-900'
       default: return 'bg-gray-200 text-gray-800'
     }
   }
 
-  const getPriorityColor = (priority: Task['priority']) => {
+  const getPriorityColor = (priority: TaskPriority | undefined) => {
+    if (!priority) return 'bg-muted text-muted-foreground'
     switch (priority) {
-      case 'Low': return 'bg-green-200 text-green-800'
-      case 'Medium': return 'bg-yellow-200 text-yellow-800'
-      case 'High': return 'bg-red-200 text-red-800'
-      default: return 'bg-gray-200 text-gray-800'
+      case 'LOW': return 'bg-primary text-primary-foreground'
+      case 'MEDIUM': return 'bg-secondary text-secondary-foreground'
+      case 'HIGH': return 'bg-destructive text-destructive-foreground'
+      default: return 'bg-muted text-muted-foreground'
     }
   }
 
   return (
-    <Card className="p-2 mb-2">
+    <Card className="p-2 mb-2 shadow-md hover:shadow-lg transition-shadow duration-200">
       <CardContent className="p-0">
-        <h3 className="font-semibold text-sm">{task.title}</h3>
-        <div className="flex items-center justify-between mt-1">
-          <Badge className={getStatusColor(task.status)}>{task.status}</Badge>
-          <Badge className={getPriorityColor(task.priority)}>{task.priority}</Badge>
+        <h3 className="font-semibold text-sm mb-1">{task.title || 'Untitled Task'}</h3>
+        <div className="flex items-center justify-between mb-2">
+          <Badge variant="outline" className={`${getStatusColor(task.status)} text-xs`}>{task.status}</Badge>
+          <Badge variant="outline" className={`${getPriorityColor(task.priority)} text-xs`}>{task.priority}</Badge>
         </div>
-        <div className="flex items-center mt-1">
-          <Avatar className="h-6 w-6 mr-1">
-            <AvatarImage src={`/avatars/${task.assignee.toLowerCase().replace(' ', '-')}.jpg`} alt={task.assignee} />
-            <AvatarFallback>{task.assignee.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-          </Avatar>
-          <span className="text-xs">{task.assignee}</span>
-        </div>
+        {task.assignedUsers?.length > 0 && (
+          <div className="flex items-center">
+            <Avatar className="h-6 w-6 mr-2">
+              <AvatarImage src={`/avatars/${task.assignedUsers[0]?.name?.toLowerCase().replace(' ', '-') || 'default'}.jpg`} alt={task.assignedUsers[0]?.name || 'User'} />
+              <AvatarFallback>{task.assignedUsers[0]?.name?.split(' ').map(n => n[0]).join('') || '?'}</AvatarFallback>
+            </Avatar>
+            <span className="text-xs text-muted-foreground">{task.assignedUsers[0]?.name || 'Unknown User'}</span>
+          </div>
+        )}
       </CardContent>
     </Card>
   )
 }
 
 export default function CalendarPage() {
-  const params = useParams<{ id: string }>()
-  const [tasks] = useState<Task[]>(initialTasks)
+  const params = useParams<{ projectId: string }>()
+  const [tasks, setTasks] = useState<Task[]>([])
   const [view, setView] = useState<View>(Views.MONTH)
   const [date, setDate] = useState(new Date())
   const [filterCriteria, setFilterCriteria] = useState<string | null>(null)
   const [filterValue, setFilterValue] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      setIsLoading(true)
+      try {
+        const response = await fetch(`/api/project/${params.projectId}/tasks?view=calendar`)
+        if (!response.ok) throw new Error('Failed to fetch tasks')
+        const data = await response.json()
+        setTasks(data.data)
+      } catch (error) {
+        console.error('Error fetching tasks:', error)
+        setError('Failed to load tasks. Please try again later.')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchTasks()
+  }, [params.projectId])
 
   const filteredTasks = useMemo(() => {
     if (!filterCriteria || !filterValue) return tasks
     return tasks.filter(task => {
-      if (filterCriteria === 'priority') return task.priority === filterValue
-      if (filterCriteria === 'status') return task.status === filterValue
-      if (filterCriteria === 'assignee') return task.assignee === filterValue
+      if (filterCriteria === 'priority') return task.priority?.toUpperCase() === filterValue.toUpperCase()
+      if (filterCriteria === 'status') return task.status?.toUpperCase() === filterValue.toUpperCase()
+      if (filterCriteria === 'assignee') return task.assignedUsers.some(user => user.name === filterValue)
       return true
     })
   }, [tasks, filterCriteria, filterValue])
 
-  const events: CalendarEvent[] = filteredTasks.map(task => ({
-    id: task.id,
-    title: task.title,
-    start: task.dueDate,
-    end: task.dueDate,
-    allDay: true,
-    resource: task,
-  }))
+  const events: CalendarEvent[] = filteredTasks
+    .filter(task => task.due_date)
+    .map(task => ({
+      id: task.id,
+      title: task.title || 'Untitled Task',
+      start: new Date(task.due_date),
+      end: new Date(task.due_date),
+      allDay: true,
+      resource: task,
+    }))
+
+  if (isLoading) return (
+    <div className="flex justify-center items-center h-screen">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  )
+  if (error) return (
+    <div className="flex justify-center items-center h-screen">
+      <p className="text-destructive">{error}</p>
+    </div>
+  )
 
   return (
-    <TabsContent value="calendar">
-        <div className="container mx-auto py-10">
-        <h1 className="text-3xl font-bold mb-6">Project Calendar - {params.id}</h1>
-        <div className="flex justify-between items-center mb-4">
-          <Select value={view} onValueChange={(value: View) => setView(value)}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select view" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={Views.MONTH}>Month</SelectItem>
-              <SelectItem value={Views.WEEK}>Week</SelectItem>
-              <SelectItem value={Views.DAY}>Day</SelectItem>
-            </SelectContent>
-          </Select>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline">
-                <Filter className="mr-2 h-4 w-4" />
-                Filter
-                <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80">
-              <div className="grid gap-4">
-                <div className="space-y-2">
-                  <h4 className="font-medium leading-none">Filter by</h4>
-                  <Select value={filterCriteria || ''} onValueChange={setFilterCriteria}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select criteria" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="priority">Priority</SelectItem>
-                      <SelectItem value="status">Status</SelectItem>
-                      <SelectItem value="assignee">Assignee</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {filterCriteria && (
+    <TabsContent value="calendar" className="space-y-4">
+      <div className="container mx-auto py-6">
+        <h1 className="text-3xl font-bold mb-6">Project Calendar</h1>
+        <Card className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <Select value={view} onValueChange={(value: View) => setView(value)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select view" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={Views.MONTH}>Month</SelectItem>
+                <SelectItem value={Views.WEEK}>Week</SelectItem>
+                <SelectItem value={Views.DAY}>Day</SelectItem>
+              </SelectContent>
+            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline">
+                  <Filter className="mr-2 h-4 w-4" />
+                  Filter
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80">
+                <div className="grid gap-4">
                   <div className="space-y-2">
-                    <h4 className="font-medium leading-none">Value</h4>
-                    <Select value={filterValue || ''} onValueChange={setFilterValue}>
+                    <h4 className="font-medium">Filter by</h4>
+                    <Select value={filterCriteria || ''} onValueChange={setFilterCriteria}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select value" />
+                        <SelectValue placeholder="Select criteria" />
                       </SelectTrigger>
                       <SelectContent>
-                        {filterCriteria === 'priority' && (
-                          <>
-                            <SelectItem value="Low">Low</SelectItem>
-                            <SelectItem value="Medium">Medium</SelectItem>
-                            <SelectItem value="High">High</SelectItem>
-                          </>
-                        )}
-                        {filterCriteria === 'status' && (
-                          <>
-                            <SelectItem value="To Do">To Do</SelectItem>
-                            <SelectItem value="In Progress">In Progress</SelectItem>
-                            <SelectItem value="Done">Done</SelectItem>
-                          </>
-                        )}
-                        {filterCriteria === 'assignee' && tasks.map(task => (
-                          <SelectItem key={task.assignee} value={task.assignee}>
-                            {task.assignee}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="priority">Priority</SelectItem>
+                        <SelectItem value="status">Status</SelectItem>
+                        <SelectItem value="assignee">Assignee</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                )}
-                <Button onClick={() => { setFilterCriteria(null); setFilterValue(null); }}>
-                  Clear Filter
-                </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
-        <Calendar
-          localizer={localizer}
-          events={events}
-          startAccessor="start"
-          endAccessor="end"
-          style={{ height: 'calc(100vh - 200px)' }}
-          view={view}
-          onView={setView}
-          date={date}
-          onNavigate={setDate}
-          components={{
-            event: TaskCard,
-          }}
-        />
-        </div>
+                  {filterCriteria && (
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Value</h4>
+                      <Select value={filterValue || ''} onValueChange={setFilterValue}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select value" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {filterCriteria === 'priority' && (
+                            <>
+                              <SelectItem value="LOW">Low</SelectItem>
+                              <SelectItem value="MEDIUM">Medium</SelectItem>
+                              <SelectItem value="HIGH">High</SelectItem>
+                            </>
+                          )}
+                          {filterCriteria === 'status' && (
+                            <>
+                              <SelectItem value="BACKLOG">Backlog</SelectItem>
+                              <SelectItem value="TODO">To Do</SelectItem>
+                              <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                              <SelectItem value="DONE">Done</SelectItem>
+                            </>
+                          )}
+                          {filterCriteria === 'assignee' &&
+                            tasks.flatMap(task => task.assignedUsers).map(user => (
+                              <SelectItem key={user.id} value={user.name}>
+                                {user.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+          <Calendar
+            localizer={localizer}
+            events={events}
+            startAccessor="start"
+            endAccessor="end"
+            views={['month', 'week', 'day']}
+            view={view}
+            onView={setView}
+            date={date}
+            onNavigate={setDate}
+            components={{
+              event: TaskCard,
+            }}
+            className="rounded-md border"
+            style={{ height: 'calc(100vh - 250px)' }}
+          />
+        </Card>
+      </div>
     </TabsContent>
   )
 }

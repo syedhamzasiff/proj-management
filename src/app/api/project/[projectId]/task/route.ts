@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { TaskPriority } from "@/types";
 
 export async function POST(req: NextRequest, { params }: { params: { projectId: string } }) {
   const { projectId } = await params;
@@ -12,9 +13,9 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     const body = await req.json();
     const { title, description, status, priority, dueDate, assignedUserIds } = body;
 
-    if (!title || priority == null || !status) {
+    if (!title || !priority || !["HIGH", "MEDIUM", "LOW"].includes(priority)) {
       return NextResponse.json(
-        { success: false, error: "Missing required fields: 'title', 'priority', or 'status'" },
+        { success: false, error: "Missing or invalid 'priority' field. Allowed values: 'HIGH', 'MEDIUM', 'LOW'." },
         { status: 400 }
       );
     }
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
         title,
         description,
         status,
-        priority,
+        priority: priority as TaskPriority,
         due_date: dueDate ? new Date(dueDate) : null,
         assignments: assignedUserIds
       ? {
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
       },
     });
 
-    console.log(task)
+    //console.log(task)
 
     return NextResponse.json({ success: true, task }, { status: 201 });
   } catch (error: any) {

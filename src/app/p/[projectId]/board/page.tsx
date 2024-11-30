@@ -20,7 +20,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { Task, TaskStatus, Priority, Column } from '@/types';
+import { Task, TaskStatus, TaskPriority, Column } from '@/types';
 import { Checkbox } from '@/components/ui/checkbox';
 
 
@@ -64,12 +64,6 @@ export default function KanbanBoard() {
       assignedUserIds: [],
     },
   });
-
-  const priorityMapping: Record<Priority, number> = {
-    LOW: 1,
-    MEDIUM: 2,
-    HIGH: 3,
-  };
   
 
   useEffect(() => {
@@ -132,7 +126,7 @@ export default function KanbanBoard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...values,
-          priority: priorityMapping[values.priority], 
+          priority: values.priority,
           dueDate: values.dueDate ? values.dueDate.toISOString() : null,
         }),
       });

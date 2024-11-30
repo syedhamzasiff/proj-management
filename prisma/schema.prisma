@@ -122,7 +122,7 @@ model Task {
   status      TaskStatus   @default(TODO)
   isCompleted Boolean      @default(false)
   isPinned    Boolean      @default(false)
-  priority    Int
+  priority    TaskPriority
   due_date    DateTime?
   created_at  DateTime     @default(now())
   updated_at  DateTime     @updatedAt
@@ -142,6 +142,11 @@ enum TaskStatus {
   DONE
 }
 
+enum TaskPriority {
+  HIGH
+  MEDIUM
+  LOW
+}
 
 model TaskAssignment {
   id           String       @id @default(cuid())

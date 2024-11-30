@@ -1,5 +1,5 @@
 // Priority levels for tasks
-export type Priority = 'LOW' | 'MEDIUM' | 'HIGH';
+export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH';
 
 // Status options for tasks
 export type TaskStatus = 'BACKLOG' | 'TODO' | 'IN_PROGRESS' | 'DONE';
@@ -10,7 +10,7 @@ export interface Task {
   title: string;
   description: string;
   status: TaskStatus;
-  priority: Priority;
+  priority: TaskPriority;
   dueDate: string;
   createdAt: string;
   updatedAt: string;
@@ -25,6 +25,7 @@ export interface Column {
   title: string;
   tasks: Task[];
 }
+
 
 
 
