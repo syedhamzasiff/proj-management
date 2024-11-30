@@ -13,15 +13,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ArrowUpDown, Search } from 'lucide-react';
 import { TabsContent } from '@/components/ui/tabs';
+import { TaskPriority } from '@prisma/client';
 
 type Task = {
   id: string;
   title: string;
   status: 'TODO' | 'IN_PROGRESS' | 'DONE';
-  priority: number;
+  priority: TaskPriority; // Updated to use TaskPriority type
   assignedUsers: { id: string; name: string }[];
   due_date?: string;
 };
@@ -62,9 +63,9 @@ export default function ListView() {
     );
 
     return filteredTasks.sort((a, b) => {
-      const valA = a[sortColumn] ?? ''; 
-      const valB = b[sortColumn] ?? ''; 
-    
+      const valA = a[sortColumn] ?? '';
+      const valB = b[sortColumn] ?? '';
+
       if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
       if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
       return 0;
@@ -96,10 +97,51 @@ export default function ListView() {
     }
   };
 
+  const tasksDueSoon = useMemo(() => {
+    const now = new Date();
+    const twoDaysLater = new Date(now);
+    twoDaysLater.setDate(now.getDate() + 2);
+
+    return tasks.filter(task => {
+      if (!task.due_date) return false;
+      const dueDate = new Date(task.due_date);
+      return dueDate >= now && dueDate <= twoDaysLater;
+    });
+  }, [tasks]);
+  
+
+  const getPriorityColor = (priority: TaskPriority) => {
+    switch (priority) {
+      case 'LOW':
+        return 'bg-green-100 text-green-800';
+      case 'MEDIUM':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'HIGH':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
     <TabsContent value="list">
       <div className="container mx-auto py-10">
         <h1 className="text-3xl font-bold mb-6">Project Tasks</h1>
+
+        {/* Section for tasks due within 2 days */}
+        {tasksDueSoon.length > 0 && (
+          <div className="mb-6 p-4 bg-red-100 border border-red-300 rounded-lg">
+            <h2 className="text-xl font-bold text-red-800 mb-2">Tasks Due Soon</h2>
+            <ul>
+              {tasksDueSoon.map(task => (
+                <li key={task.id} className="text-red-700">
+                  {task.title} - Due by {new Date(task.due_date!).toLocaleDateString()}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div className="flex justify-between items-center mb-4">
           <div className="relative w-64">
             <Input
@@ -143,21 +185,27 @@ export default function ListView() {
               <TableRow key={task.id}>
                 <TableCell className="font-medium">{task.title}</TableCell>
                 <TableCell>
-                  <Badge className={getStatusColor(task.status)}>{task.status.replace('_', ' ')}</Badge>
+                  <Badge className={getStatusColor(task.status)}>
+                    {task.status.replace('_', ' ')}
+                  </Badge>
                 </TableCell>
-                <TableCell>{task.priority}</TableCell>
+                <TableCell>
+                  <Badge className={getPriorityColor(task.priority)}>{task.priority}</Badge>
+                </TableCell>
                 <TableCell>
                   {task.assignedUsers.map((user) => (
                     <div key={user.id} className="flex items-center mb-1">
                       <Avatar className="h-8 w-8 mr-2">
-                        <AvatarFallback>{user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                        <AvatarFallback>{user.name.split(' ').map((n) => n[0]).join('')}</AvatarFallback>
                       </Avatar>
                       {user.name}
                     </div>
                   ))}
                 </TableCell>
-                <TableCell>{task.due_date ? new Date(task.due_date).toLocaleDateString() : 'N/A'}</TableCell>
-              </TableRow>
+                <TableCell>
+                  {task.due_date ? new Date(task.due_date).toLocaleDateString() : 'N/A'}
+                </TableCell>
+              </TableRow>            
             ))}
           </TableBody>
         </Table>

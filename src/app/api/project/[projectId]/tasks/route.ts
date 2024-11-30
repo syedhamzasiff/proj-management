@@ -13,7 +13,7 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
           include: { user: true },
         },
       },
-      orderBy: { priority: "desc" }, 
+      orderBy: { priority: "asc" }, 
     });
    
     let responseData;
