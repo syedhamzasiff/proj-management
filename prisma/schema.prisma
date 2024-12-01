@@ -31,6 +31,7 @@ model User {
   //attachments  Attachment[]
 
   @@map("users")
+  Changelog Changelog[]
 }
 
 model Workspace {
@@ -64,14 +65,17 @@ model WorkspaceInvitation {
 }
 
 enum WorkspaceRole {
+  OWNER
   LEADER
   MEMBER
 }
 
 enum ProjectRole {
-  LEADER
+  LEAD
   MEMBER
+  VIEWER
 }
+
 
 model ProjectWorkspaceMember {
   id            String       @id @default(cuid())
@@ -112,12 +116,15 @@ model Project {
   //whiteboards Whiteboard[]
 
   @@map("projects")
+  Changelog Changelog[]
 }
 
 model Task {
   id          String       @id @default(cuid())
   projectId   String
+  parentTaskId String?     // For subtasks
   title       String
+  type        TaskType
   description String?
   status      TaskStatus   @default(TODO)
   isCompleted Boolean      @default(false)
@@ -128,12 +135,23 @@ model Task {
   updated_at  DateTime     @updatedAt
 
   project     Project      @relation(fields: [projectId], references: [id])
+  parentTask  Task?        @relation("ParentTask", fields: [parentTaskId], references: [id])
+  subtasks    Task[]       @relation("ParentTask")
   assignments TaskAssignment[]
   comments    Comment[]
+
   @@index([status, isPinned])  
 
   @@map("tasks")
+  Changelog Changelog[]
 }
+
+enum TaskType {
+  FEATURE
+  BUG
+  TASK
+}
+
 
 enum TaskStatus {
   BACKLOG
@@ -163,89 +181,35 @@ model TaskAssignment {
 }
 
 model Comment {
-  id         String       @id @default(cuid())
-  taskId     String
-  userId     String
-  content    String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id             String      @id @default(cuid())
+  taskId         String
+  userId         String
+  content        String
+  parentCommentId String?    // For threads
+  type           CommentType @default(USER) // New field
+  created_at     DateTime    @default(now())
+  updated_at     DateTime    @updatedAt
 
-  // Relations
-  task       Task     @relation(fields: [taskId], references: [id])
-  user       User     @relation(fields: [userId], references: [id])
-
-  @@map("comments")
+  task           Task        @relation(fields: [taskId], references: [id])
+  user           User        @relation(fields: [userId], references: [id])
 }
 
-// model Attachment {
-//   id          Int      @id @default(autoincrement())
-//   taskId      Int
-//   userId      Int
-//   file_name   String
-//   file_path   String
-//   file_type   String
-//   file_size   Int
-//   uploaded_at DateTime @default(now())
+enum CommentType {
+  USER
+  SYSTEM
+}
 
-//   // Relations
-//   task        Task     @relation(fields: [taskId], references: [id])
-//   user        User     @relation(fields: [userId], references: [id])
+model Changelog {
+  id          String       @id @default(cuid())
+  projectId   String
+  taskId      String
+  completedBy String       // User who completed the task
+  completedAt DateTime     @default(now())
 
-//   @@map("attachments")
-// }
+  project     Project      @relation(fields: [projectId], references: [id])
+  task        Task         @relation(fields: [taskId], references: [id])
+  user        User         @relation(fields: [completedBy], references: [id])
 
-// model Doc {
-//   id          Int      @id @default(autoincrement())
-//   projectId   Int
-//   title       String
-//   content     String
-//   created_at  DateTime @default(now())
-//   updated_at  DateTime @updatedAt
+  @@map("changelogs")
+}
 
-//   // Relations
-//   project     Project  @relation(fields: [projectId], references: [id])
-
-//   @@map("docs")
-// }
-
-// model Notepad {
-//   id          Int      @id @default(autoincrement())
-//   projectId   Int
-//   title       String
-//   created_at  DateTime @default(now())
-//   updated_at  DateTime @updatedAt
-
-//   // Relations
-//   project     Project  @relation(fields: [projectId], references: [id])
-//   notes       Notes[]
-
-//   @@map("notepads")
-// }
-
-// model Notes {
-//   id          Int      @id @default(autoincrement())
-//   notepadId   Int
-//   title       String
-//   content     String
-//   created_at  DateTime @default(now())
-//   updated_at  DateTime @updatedAt
-
-//   // Relations
-//   notepad     Notepad  @relation(fields: [notepadId], references: [id])
-
-//   @@map("notes")
-// }
-
-// model Whiteboard {
-//   id          Int      @id @default(autoincrement())
-//   projectId   Int
-//   title       String
-//   content     String
-//   created_at  DateTime @default(now())
-//   updated_at  DateTime @updatedAt
-
-//   // Relations
-//   project     Project  @relation(fields: [projectId], references: [id])
-
-//   @@map("whiteboards")
-// }
