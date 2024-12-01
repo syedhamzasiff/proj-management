@@ -34,6 +34,7 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
         .map((task) => ({
           id: task.id,
           title: task.title,
+          type: task.type,
           due_date: task.due_date,  
           isCompleted: task.isCompleted,
           priority: task.priority,
@@ -43,6 +44,7 @@ export async function GET(req: NextRequest, { params }: { params: { projectId: s
         id: task.id,
         title: task.title,
         description: task.description,
+        type: task.type,
         status: task.status,
         isCompleted: task.isCompleted,
         isPinned: task.isPinned,

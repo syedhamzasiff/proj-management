@@ -34,21 +34,34 @@ export async function GET(
       notStarted: project.tasks.filter(task => task.status === 'TODO' || task.status === 'BACKLOG').length,
     }
 
-    const currentSprint = {
-      name: 'Current Sprint',
-      endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], 
-    }
+    const taskTypeStatistics = project.tasks.reduce(
+      (acc, task) => {
+        acc[task.type] = (acc[task.type] || 0) + 1
+        return acc
+      },
+      { FEATURE: 0, BUG: 0, TASK: 0 }
+    )
 
     const response = {
       name: project.name,
       progress: Math.round((taskStatistics.completed / taskStatistics.total) * 100) || 0,
-      tasks: taskStatistics,
+      tasks: {
+        byStatus: taskStatistics,
+        byType: taskTypeStatistics,
+        list: project.tasks.map(task => ({
+          id: task.id,
+          title: task.title,
+          type: task.type,
+          status: task.status,
+          priority: task.priority,
+          dueDate: task.due_date,
+          description: task.description,
+        })),
+      },
       team: project.members.map(member => ({
         name: member.user.name,
         avatar: member.user.avatar_url,
       })),
-      timeTracked: '0h 0m', 
-      currentSprint: currentSprint,
     }
 
     return NextResponse.json(response)

@@ -4,11 +4,14 @@ export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH';
 // Status options for tasks
 export type TaskStatus = 'BACKLOG' | 'TODO' | 'IN_PROGRESS' | 'DONE';
 
+export type TaskType = 'FEATURE' | 'BUG' | 'TASK'
+
 // Base Task interface
 export interface Task {
   id: string;
   title: string;
   description: string;
+  type: TaskType;
   status: TaskStatus;
   priority: TaskPriority;
   dueDate: string;

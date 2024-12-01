@@ -62,6 +62,7 @@ export default function KanbanBoard() {
       description: "",
       status: "TODO",
       priority: "MEDIUM",
+      type: "FEATURE",
       assignedUserIds: [],
     },
   });
@@ -232,7 +233,7 @@ export default function KanbanBoard() {
                 ? task.assignments.map((assignment) => assignment.user?.name).join(', ')
                 : 'Unassigned'}
             </div>
-            <div className="text-sm">
+            <div className="text-sm mt-2">
               Priority:
               <span
                 className={cn("ml-1 px-2 py-1 rounded-full text-xs", {
@@ -242,6 +243,18 @@ export default function KanbanBoard() {
                 })}
               >
                 {task.priority}
+              </span>
+            </div>
+            <div className="text-sm mt-2">
+              Type:
+              <span
+                className={cn("ml-1 px-2 py-1 rounded-full text-xs", {
+                  'bg-red-100 text-red-800': task.type === 'BUG',
+                  'bg-purple-100 text-purple-800': task.type === 'FEATURE',
+                  'bg-amber-100 text-amber-800': task.type === 'TASK',
+                })}
+              >
+                {task.type}
               </span>
             </div>
             {task.dueDate && (

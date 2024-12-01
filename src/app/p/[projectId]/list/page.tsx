@@ -16,13 +16,14 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ArrowUpDown, Search } from 'lucide-react';
 import { TabsContent } from '@/components/ui/tabs';
-import { TaskPriority } from '@prisma/client';
+import { TaskPriority, TaskType } from '@prisma/client';
 
 type Task = {
   id: string;
   title: string;
   status: 'TODO' | 'IN_PROGRESS' | 'DONE';
-  priority: TaskPriority; // Updated to use TaskPriority type
+  type: TaskType;
+  priority: TaskPriority; 
   assignedUsers: { id: string; name: string }[];
   due_date?: string;
 };
@@ -93,6 +94,15 @@ export default function ListView() {
       case 'TODO': return 'bg-yellow-200 text-yellow-800';
       case 'IN_PROGRESS': return 'bg-blue-200 text-blue-800';
       case 'DONE': return 'bg-green-200 text-green-800';
+      default: return 'bg-gray-200 text-gray-800';
+    }
+  };
+
+  const getTypeColor = (status: Task['type']) => {
+    switch (status) {
+      case 'FEATURE': return 'bg-yellow-200 text-yellow-800';
+      case 'BUG': return 'bg-blue-200 text-blue-800';
+      case 'TASK': return 'bg-green-200 text-green-800';
       default: return 'bg-gray-200 text-gray-800';
     }
   };
@@ -172,6 +182,11 @@ export default function ListView() {
                   Priority {renderSortIcon('priority')}
                 </Button>
               </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => handleSort('type')}>
+                  Type {renderSortIcon('type')}
+                </Button>
+              </TableHead>
               <TableHead>Assignees</TableHead>
               <TableHead>
                 <Button variant="ghost" onClick={() => handleSort('due_date')}>
@@ -191,6 +206,9 @@ export default function ListView() {
                 </TableCell>
                 <TableCell>
                   <Badge className={getPriorityColor(task.priority)}>{task.priority}</Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge className={getTypeColor(task.type)}>{task.type}</Badge>
                 </TableCell>
                 <TableCell>
                   {task.assignedUsers.map((user) => (
