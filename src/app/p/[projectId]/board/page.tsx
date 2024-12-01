@@ -38,6 +38,7 @@ const taskSchema = z.object({
   description: z.string().max(500, "Description must be 500 characters or less"),
   status: z.enum(['BACKLOG', 'TODO', 'IN_PROGRESS', 'DONE'] as const),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH'] as const),
+  type: z.enum(['FEATURE', 'BUG', 'TASK'] as const),
   dueDate: z.date().optional(),
   assignedUserIds: z.array(z.string()).optional(),
 });
@@ -127,6 +128,7 @@ export default function KanbanBoard() {
         body: JSON.stringify({
           ...values,
           priority: values.priority,
+          type: values.type,
           dueDate: values.dueDate ? values.dueDate.toISOString() : null,
         }),
       });
@@ -332,6 +334,28 @@ export default function KanbanBoard() {
                           {...field}
                         />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Task Type</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select task type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="FEATURE">Feature</SelectItem>
+                          <SelectItem value="BUG">Bug</SelectItem>
+                          <SelectItem value="TASK">Task</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

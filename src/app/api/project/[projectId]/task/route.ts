@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { TaskPriority } from "@/types";
+import { TaskPriority, TaskStatus } from "@/types";
+import { TaskType } from "@prisma/client";
 
 export async function POST(req: NextRequest, { params }: { params: { projectId: string } }) {
   const { projectId } = await params;
@@ -11,7 +12,14 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
 
   try {
     const body = await req.json();
-    const { title, description, status, priority, dueDate, assignedUserIds } = body;
+    const { title, description, status, priority, dueDate, assignedUserIds, type } = body;
+
+    if (!type || !["FEATURE", "BUG", "TASK"].includes(type)) {
+      return NextResponse.json(
+        { success: false, error: "Missing or invalid 'type' field. Allowed values: 'FEATURE', 'BUG', 'TASK'." },
+        { status: 400 }
+      );
+    }
 
     if (!title || !priority || !["HIGH", "MEDIUM", "LOW"].includes(priority)) {
       return NextResponse.json(
@@ -39,6 +47,7 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
         description,
         status,
         priority: priority as TaskPriority,
+        type: type as TaskType,
         due_date: dueDate ? new Date(dueDate) : null,
         assignments: assignedUserIds
       ? {
@@ -55,7 +64,6 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
       },
     });
 
-    //console.log(task)
 
     return NextResponse.json({ success: true, task }, { status: 201 });
   } catch (error: any) {
