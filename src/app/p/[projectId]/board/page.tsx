@@ -169,7 +169,7 @@ export default function KanbanBoard() {
         const newTask: Task = {
           ...data.task,
           dueDate: data.task.due_date ? new Date(data.task.due_date) : undefined,
-          assignedUsers: data.task.assignments.map((assignment: any) => assignment.user),
+          assignedUsers: data.task.assignedUsers.map((assignment: any) => assignment.user),
           subtasks: [],
           comments: [],
         };
@@ -499,8 +499,8 @@ export default function KanbanBoard() {
             <p className="text-sm text-gray-600 mb-2">{task.description}</p>
             <div className="text-sm text-gray-500 mb-2">
               Assignees: 
-              {task.assignedUsers && task.assignedUsers.length > 0
-                ? task.assignedUsers.map((user) => user.name).join(', ')
+              {task.assignments && task.assignments.length > 0
+                ? task.assignments.map((user) => user.name).join(', ')
                 : 'Unassigned'}
             </div>
             <div className="text-sm mt-2">

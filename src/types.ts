@@ -19,7 +19,7 @@ export interface Task {
   updatedAt: string;
   isPinned: boolean;
   progress?: number;
-  assignedUsers: { id: string; name: string }[]; 
+  assignments: { id: string; name: string }[];
   subtasks: Subtask[];
   comments: Comment[];
 }
