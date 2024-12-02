@@ -1,16 +1,27 @@
+// app/api/workspaces/[workspaceId]/project/route.ts
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export async function POST(request: Request, { params }: { params: { workspaceId: string } }) {
+export async function POST(
+  request: Request,
+  { params }: { params: { workspaceId: string } }
+) {
   try {
-    const { name, description, endDate, status } = await request.json();
+    const { userId, name, description, status } = await request.json();
     const workspaceId = params.workspaceId;
 
     if (!workspaceId || typeof workspaceId !== 'string') {
       return NextResponse.json(
         { error: 'Invalid or missing workspaceId' },
+        { status: 400 }
+      );
+    }
+
+    if (!userId || typeof userId !== 'string') {
+      return NextResponse.json(
+        { error: 'Invalid or missing userId' },
         { status: 400 }
       );
     }
@@ -39,14 +50,7 @@ export async function POST(request: Request, { params }: { params: { workspaceId
       );
     }
 
-    if (endDate && isNaN(Date.parse(endDate))) {
-      return NextResponse.json(
-        { error: 'Invalid endDate' },
-        { status: 400 }
-      );
-    }
-
-    // Create the project
+    // Create the project and assign the creator as Project Leader
     const project = await prisma.project.create({
       data: {
         workspaceId,
@@ -54,7 +58,17 @@ export async function POST(request: Request, { params }: { params: { workspaceId
         description: description || null,
         status,
         start_date: startDate,
-        end_date: endDate ? new Date(endDate) : null,
+      },
+    });
+
+    // Assign the creator as the Project Leader
+    await prisma.projectWorkspaceMember.create({
+      data: {
+        userId,
+        projectId: project.id,
+        workspaceRole: 'OWNER',
+        projectRole: 'LEADER',
+        joined_at: new Date(),
       },
     });
 
@@ -68,7 +82,6 @@ export async function POST(request: Request, { params }: { params: { workspaceId
           description: project.description,
           status: project.status,
           startDate: project.start_date.toISOString(),
-          endDate: project.end_date?.toISOString() || null,
           createdAt: project.created_at.toISOString(),
           updatedAt: project.updated_at.toISOString(),
         },

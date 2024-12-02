@@ -23,7 +23,7 @@ export async function POST(request: Request) {
         members: {
           create: {
             userId,
-            workspaceRole: 'LEADER',
+            workspaceRole: 'OWNER',
           },
         }, 
       },

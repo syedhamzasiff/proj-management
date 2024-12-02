@@ -1,5 +1,5 @@
 import prisma from '@/lib/prisma';
-import { verifySession } from '@/lib/auth'; // Your custom auth function
+import { verifySession } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 
 export async function GET(
@@ -7,6 +7,7 @@ export async function GET(
   { params }: { params: { projectId: string } }
 ) {
   const { isAuth, userId } = await verifySession();
+
   if (!isAuth || !userId) {
     return NextResponse.json({ authorized: false }, { status: 401 });
   }
@@ -14,18 +15,12 @@ export async function GET(
   const { projectId } = params;
 
   try {
+    // Check if the user is the leader for the project
     const isAuthorized = await prisma.projectWorkspaceMember.findFirst({
       where: {
         userId,
-        OR: [
-          {
-            workspaceRole: { in: ['OWNER', 'LEADER'] },
-          },
-          {
-            projectId,
-            projectRole: 'LEAD',
-          },
-        ],
+        projectId,
+        projectRole: 'LEADER',
       },
     });
 

@@ -169,7 +169,7 @@ export default function KanbanBoard() {
         const newTask: Task = {
           ...data.task,
           dueDate: data.task.due_date ? new Date(data.task.due_date) : undefined,
-          assignedUsers: data.task.assignedUsers.map((assignment: any) => assignment.user),
+          assignedUsers: (data.task.assignedUsers || []).map((assignment: any) => assignment.user),
           subtasks: [],
           comments: [],
         };
@@ -444,7 +444,7 @@ export default function KanbanBoard() {
 
   const handleUpdateTaskStatus = async (taskId: string, newStatus: TaskStatus) => {
     try {
-      const response = await fetch(`/api/project/${projectId}/tasks/${taskId}`, {
+      const response = await fetch(`/api/project/${projectId}/task/${taskId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

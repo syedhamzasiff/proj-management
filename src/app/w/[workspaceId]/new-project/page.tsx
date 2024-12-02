@@ -1,51 +1,68 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { useParams } from 'next/navigation'
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useToast } from "@/components/hooks/use-toast"
-import { ToastAction } from "@/components/ui/toast"
-import { CalendarIcon, Loader2 } from 'lucide-react'
-import { format, isAfter, startOfToday } from "date-fns"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useToast } from '@/components/hooks/use-toast';
+import { ToastAction } from '@/components/ui/toast';
+import { Loader2 } from 'lucide-react';
+import { format } from 'date-fns';
+import { useUser } from '@/context/UserContext';
 
 const formSchema = z.object({
-  name: z.string().min(1, "Project name is required").max(100, "Project name must be 100 characters or less"),
-  description: z.string().max(500, "Description must be 500 characters or less").optional(),
-  status: z.enum(["PLANNING", "IN_PROGRESS", "COMPLETED", "ON_HOLD"]).default("PLANNING"),
-  endDate: z.date().refine(date => isAfter(date, startOfToday()), {
-    message: "End date must be after today's date",
-  }).optional(),
-})
+  name: z.string().min(1, 'Project name is required').max(100),
+  description: z.string().max(500).optional(),
+  status: z.enum(['PLANNING', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD']),
+});
 
 export default function NewProjectPage() {
-  const router = useRouter()
-  const params = useParams()
-  const workspaceId = params.workspaceId as string
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const { toast } = useToast()
+  const router = useRouter();
+  const params = useParams();
+  const workspaceId = params.workspaceId as string;
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+  const { userId } = useUser();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      description: "",
-      status: "PLANNING",
+      name: '',
+      description: '',
+      status: 'PLANNING',
     },
-  })
+  });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
       const response = await fetch(`/api/workspaces/${workspaceId}/project`, {
         method: 'POST',
@@ -53,36 +70,31 @@ export default function NewProjectPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          userId,
           workspaceId,
           ...values,
-          endDate: values.endDate?.toISOString(),
         }),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error('Failed to create project')
+        throw new Error('Failed to create project');
       }
 
-      const data = await response.json()
+      const data = await response.json();
       toast({
-        title: "Project created successfully",
+        title: 'Project created successfully',
         description: `"${values.name}" has been added to your workspace.`,
-        action: (
-          <ToastAction altText="View project">View project</ToastAction>
-        ),
-      })
-      router.push(`/p/${data.project.id}`)
+        action: <ToastAction altText="View project">View project</ToastAction>,
+      });
+      router.push(`/p/${data.project.id}`);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to create project. Please try again.",
-        variant: "destructive",
-        action: (
-          <ToastAction altText="Try again">Try again</ToastAction>
-        ),
-      })
+        title: 'Error',
+        description: 'Failed to create project. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
   }
 
@@ -104,9 +116,6 @@ export default function NewProjectPage() {
                   <FormControl>
                     <Input placeholder="Enter project name" {...field} />
                   </FormControl>
-                  <FormDescription>
-                    Give your project a descriptive name.
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -118,15 +127,8 @@ export default function NewProjectPage() {
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Enter project description"
-                      className="resize-none"
-                      {...field}
-                    />
+                    <Textarea placeholder="Enter project description" {...field} />
                   </FormControl>
-                  <FormDescription>
-                    Briefly describe the project (optional).
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -137,7 +139,10 @@ export default function NewProjectPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select project status" />
@@ -150,70 +155,6 @@ export default function NewProjectPage() {
                       <SelectItem value="ON_HOLD">On Hold</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormDescription>
-                    Select the current status of the project.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              name='startDate'
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Start Date</FormLabel>
-                  <FormControl>
-                    <Input
-                      value={format(new Date(), "PPP")}
-                      readOnly
-                      disabled
-                      className="cursor-not-allowed"
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    The start date is fixed to today's date.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="endDate"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>End Date (Optional)</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={`w-full pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) =>
-                          date <= startOfToday()
-                        }
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormDescription>
-                    The expected completion date of the project (if known).
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -225,12 +166,12 @@ export default function NewProjectPage() {
                   Creating Project
                 </>
               ) : (
-                "Create Project"
+                'Create Project'
               )}
             </Button>
           </form>
         </Form>
       </CardContent>
     </Card>
-  )
+  );
 }

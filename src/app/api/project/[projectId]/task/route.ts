@@ -64,7 +64,8 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
       },
     });
 
-
+    task.assignments = task.assignments || []
+    
     return NextResponse.json({ success: true, task }, { status: 201 });
   } catch (error: any) {
     console.error("Error creating task:", error);

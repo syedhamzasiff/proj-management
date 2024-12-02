@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Navbar from '@/components/projects/Navbar';
+import { useUser } from '@/context/UserContext';
 
 export default function ProjectLayout({
   children,
@@ -12,6 +13,7 @@ export default function ProjectLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { userId, isAuth } = useUser();
 
   const pathParts = pathname.split('/');
   const projectId = pathParts[2];
@@ -23,6 +25,11 @@ export default function ProjectLayout({
   const [canAccessBacklog, setCanAccessBacklog] = useState(false);
 
   useEffect(() => {
+    if (!isAuth || !userId) {
+      router.push('/login'); // Redirect if not authenticated
+      return;
+    }
+
     const fetchProjectDetails = async () => {
       try {
         const res = await fetch(`/api/project/${projectId}`);
@@ -49,7 +56,7 @@ export default function ProjectLayout({
 
     fetchProjectDetails();
     checkAuthorization();
-  }, [projectId]);
+  }, [projectId, userId, isAuth, router]);
 
   const handleTabChange = (value: string) => {
     if (value === 'overview') {

@@ -66,12 +66,11 @@ model WorkspaceInvitation {
 
 enum WorkspaceRole {
   OWNER
-  LEADER
   MEMBER
 }
 
 enum ProjectRole {
-  LEAD
+  LEADER
   MEMBER
   VIEWER
 }
