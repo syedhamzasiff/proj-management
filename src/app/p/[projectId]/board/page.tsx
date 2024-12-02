@@ -230,7 +230,6 @@ export default function KanbanBoard() {
         
           // Remove task from all columns first
           Object.keys(newColumns).forEach(statusKey => {
-            // Cast statusKey to one of the valid column keys to prevent the TS error
             newColumns[statusKey as keyof typeof newColumns].tasks = newColumns[statusKey as keyof typeof newColumns].tasks.filter(
               task => task.id !== updatedTask.id
             );
@@ -244,8 +243,6 @@ export default function KanbanBoard() {
           return newColumns;
         });
         
-        
-
         setIsEditTaskDialogOpen(false);
         setSelectedTask(null);
         taskForm.reset();
@@ -492,6 +489,15 @@ export default function KanbanBoard() {
       <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
         <Card className={cn("mb-2 bg-white cursor-pointer", task.isPinned && "border-2 border-blue-500")} onClick={() => {
           setSelectedTask(task);
+          taskForm.reset({
+            title: task.title,
+            description: task.description,
+            status: task.status,
+            priority: task.priority,
+            type: task.type,
+            dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
+            assignedUserIds: task.assignments ? task.assignments.map(assignment => assignment.id) : [],
+          });
           setIsEditTaskDialogOpen(true);
         }}>
           <CardContent className="p-4">
@@ -595,208 +601,210 @@ export default function KanbanBoard() {
               Add Task
             </Button>
           </SheetTrigger>
-          <SheetContent>
-            <SheetHeader>
-              <SheetTitle>Add New Task</SheetTitle>
-            </SheetHeader>
-            <Form {...taskForm}>
-              <form onSubmit={taskForm.handleSubmit(handleAddTask)} className="space-y-6 mt-4">
-                <FormField
-                  control={taskForm.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Task Title</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter task title" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={taskForm.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Enter task description"
-                          className="resize-none"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={taskForm.control}
-                  name="type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Task Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+          <SheetContent className="sm:max-w-[425px] overflow-y-auto">
+            <ScrollArea className="h-full pr-4">
+              <SheetHeader>
+                <SheetTitle>Add New Task</SheetTitle>
+              </SheetHeader>
+              <Form {...taskForm}>
+                <form onSubmit={taskForm.handleSubmit(handleAddTask)} className="space-y-6 mt-4">
+                  <FormField
+                    control={taskForm.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Task Title</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select task type" />
-                          </SelectTrigger>
+                          <Input placeholder="Enter task title" {...field} />
                         </FormControl>
-                        <SelectContent>
-                          <SelectItem value="FEATURE">Feature</SelectItem>
-                          <SelectItem value="BUG">Bug</SelectItem>
-                          <SelectItem value="TASK">Task</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={taskForm.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={taskForm.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select task status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="BACKLOG">Backlog</SelectItem>
-                          <SelectItem value="TODO">To Do</SelectItem>
-                          <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                          <SelectItem value="DONE">Done</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={taskForm.control}
-                  name="priority"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Priority</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select priority" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="LOW">Low</SelectItem>
-                          <SelectItem value="MEDIUM">Medium</SelectItem>
-                          <SelectItem value="HIGH">High</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={taskForm.control}
-                  name="dueDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Due Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) =>
-                              date < new Date(new Date().setHours(0, 0, 0, 0))
-                            }
+                          <Textarea
+                            placeholder="Enter task description"
+                            className="resize-none"
+                            {...field}
                           />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={taskForm.control}
-                  name="assignedUserIds"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Assign To</FormLabel>
-                      <Select
-                        onValueChange={(value) => field.onChange([...field.value || [], value])}
-                        value={field.value?.[field.value.length - 1] || ""}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select users" />
-                          </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
-                          {assignableUsers.map((user) => (
-                            <SelectItem key={user.id} value={user.id}>
-                              {user.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <div className="mt-2">
-                        {field.value?.map((userId) => {
-                          const user = assignableUsers.find((u) => u.id === userId);
-                          return user ? (
-                            <span key={userId} className="inline-block bg-blue-100 text-blue-800 text-xs font-semibold mr-2 mb-2 px-2.5 py-0.5 rounded">
-                              {user.name}
-                              <button
-                                type="button"
-                                onClick={() => field.onChange(field.value?.filter((id) => id !== userId))}
-                                className="ml-2 text-blue-600 hover:text-blue-800"
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={taskForm.control}
+                    name="type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Task Type</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select task type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="FEATURE">Feature</SelectItem>
+                            <SelectItem value="BUG">Bug</SelectItem>
+                            <SelectItem value="TASK">Task</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={taskForm.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select task status" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="BACKLOG">Backlog</SelectItem>
+                            <SelectItem value="TODO">To Do</SelectItem>
+                            <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                            <SelectItem value="DONE">Done</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={taskForm.control}
+                    name="priority"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Priority</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select priority" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="LOW">Low</SelectItem>
+                            <SelectItem value="MEDIUM">Medium</SelectItem>
+                            <SelectItem value="HIGH">High</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={taskForm.control}
+                    name="dueDate"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Due Date</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
                               >
-                                ×
-                              </button>
-                            </span>
-                          ) : null;
-                        })}
-                      </div>
-                      <FormDescription>
-                        Choose users to assign this task to.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating Task
-                    </>
-                  ) : (
-                    "Create Task"
-                  )}
-                </Button>
-              </form>
-            </Form>
+                                {field.value ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              disabled={(date) =>
+                                date < new Date(new Date().setHours(0, 0, 0, 0))
+                              }
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={taskForm.control}
+                    name="assignedUserIds"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Assign To</FormLabel>
+                        <Select
+                          onValueChange={(value) => field.onChange([...field.value || [], value])}
+                          value={field.value?.[field.value.length - 1] || ""}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select users" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {assignableUsers.map((user) => (
+                              <SelectItem key={user.id} value={user.id}>
+                                {user.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <div className="mt-2">
+                          {field.value?.map((userId) => {
+                            const user = assignableUsers.find((u) => u.id === userId);
+                            return user ? (
+                              <span key={userId} className="inline-block bg-blue-100 text-blue-800 text-xs font-semibold mr-2 mb-2 px-2.5 py-0.5 rounded">
+                                {user.name}
+                                <button
+                                  type="button"
+                                  onClick={() => field.onChange(field.value?.filter((id) => id !== userId))}
+                                  className="ml-2 text-blue-600 hover:text-blue-800"
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            ) : null;
+                          })}
+                        </div>
+                        <FormDescription>
+                          Choose users to assign this task to.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating Task
+                      </>
+                    ) : (
+                      "Create Task"
+                    )}
+                  </Button>
+                </form>
+              </Form>
+            </ScrollArea>
           </SheetContent>
         </Sheet>
       </div>
@@ -1016,6 +1024,7 @@ export default function KanbanBoard() {
                   </Button>
                 </form>
               </Form>
+              {/*}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Subtasks</h3>
                 {selectedTask.subtasks && selectedTask.subtasks.length > 0 ? (
@@ -1096,6 +1105,7 @@ export default function KanbanBoard() {
                   </form>
                 </Form>
               </div>
+              {*/}
             </div>
           )}
         </DialogContent>
@@ -1103,3 +1113,4 @@ export default function KanbanBoard() {
     </div>
   );
 }
+

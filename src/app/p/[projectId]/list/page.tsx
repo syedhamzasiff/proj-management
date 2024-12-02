@@ -83,7 +83,7 @@ function EditTaskDialog({ task, onSave, assignableUsers }: { task: Task; onSave:
         <DialogTitle>Edit Task</DialogTitle>
       </DialogHeader>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
           <FormField
             control={form.control}
             name="title"
@@ -209,9 +209,9 @@ function EditTaskDialog({ task, onSave, assignableUsers }: { task: Task; onSave:
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
+                      disabled={(date) => date < new Date()}
                       selected={field.value}
                       onSelect={field.onChange}
-                      initialFocus
                     />
                   </PopoverContent>
                 </Popover>
@@ -242,7 +242,7 @@ function EditTaskDialog({ task, onSave, assignableUsers }: { task: Task; onSave:
                     </SelectContent>
                   </Select>
                 </FormControl>
-                <div className="mt-2">
+                <div>
                   {field.value?.map((userId) => {
                     const user = assignableUsers.find((u) => u.id === userId);
                     return user ? (
@@ -263,6 +263,7 @@ function EditTaskDialog({ task, onSave, assignableUsers }: { task: Task; onSave:
               </FormItem>
             )}
           />
+          {/*}
           <FormField
             control={form.control}
             name="isCompleted"
@@ -307,8 +308,10 @@ function EditTaskDialog({ task, onSave, assignableUsers }: { task: Task; onSave:
               </FormItem>
             )}
           />
+          {*/}
           <Button type="submit">Save changes</Button>
         </form>
+
       </Form>
     </DialogContent>
   );
@@ -476,16 +479,6 @@ export default function ListView() {
         )}
 
         <div className="flex justify-between items-center mb-4">
-          <div className="relative w-64">
-            <Input
-              type="text"
-              placeholder="Search tasks..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-            <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-          </div>
         </div>
         <Table>
           <TableHeader>
