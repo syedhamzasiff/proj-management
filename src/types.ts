@@ -19,7 +19,52 @@ export interface Task {
   updatedAt: string;
   isPinned: boolean;
   progress?: number;
-  assignments?: { user: { id: string; name: string; email?: string } }[]; 
+  assignedUsers: { id: string; name: string }[]; 
+  subtasks: Subtask[];
+  comments: Comment[];
+}
+
+export interface Subtask {
+  id: string;
+  projectId: string;
+  parentTaskId: string;
+  title: string;
+  type: TaskType;
+  description?: string;
+  status: TaskStatus;
+  isCompleted: boolean;
+  isPinned: boolean;
+  priority: TaskPriority;
+  due_date?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskAssignment {
+  id: string;
+  taskId: string;
+  userId: string;
+  assigned_at: string;
+  user: User;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  avatar_url?: string;
+}
+
+export interface Comment {
+  id: string;
+  taskId: string;
+  userId: string;
+  content: string;
+  parentCommentId?: string;
+  type: 'USER' | 'SYSTEM';
+  created_at: string;
+  updated_at: string;
+  user: User;
 }
 
 
