@@ -154,6 +154,7 @@ export default function NewWorkspace() {
                           Personal
                         </FormLabel>
                       </FormItem>
+                      {/*}
                       <FormItem className="flex items-center space-x-3 space-y-0">
                         <FormControl>
                           <RadioGroupItem value="shared" />
@@ -162,6 +163,7 @@ export default function NewWorkspace() {
                           Shared
                         </FormLabel>
                       </FormItem>
+                      {*/}
                     </RadioGroup>
                   </FormControl>
                   <FormMessage />

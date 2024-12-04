@@ -12,7 +12,7 @@ export async function GET(
     return NextResponse.json({ authorized: false }, { status: 401 });
   }
 
-  const { projectId } = params;
+  const { projectId } = await params;
 
   try {
     // Check if the user is the leader for the project

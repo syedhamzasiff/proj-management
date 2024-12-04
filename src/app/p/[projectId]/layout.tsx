@@ -77,9 +77,6 @@ export default function ProjectLayout({
           <TabsTrigger value="list">List</TabsTrigger>
           {canAccessBacklog && <TabsTrigger value="backlog">Backlog</TabsTrigger>}
           <TabsTrigger value="calendar">Calendar</TabsTrigger>
-          <TabsTrigger value="docs">Docs</TabsTrigger>
-          <TabsTrigger value="whiteboard">Whiteboard</TabsTrigger>
-          <TabsTrigger value="notes">Notes</TabsTrigger>
         </TabsList>
 
         {children}

@@ -44,25 +44,12 @@ model Workspace {
   // Relations
   members     ProjectWorkspaceMember[]
   projects    Project[]
-  WorkspaceInvitation WorkspaceInvitation[]
+  invitations WorkspaceInvitation[]
 
   @@map("workspaces")
   
 }
 
-model WorkspaceInvitation {
-  id            String    @id @default(cuid())
-  workspaceId   String
-  invitedEmail  String
-  status        String    @default("PENDING") // PENDING, ACCEPTED, REJECTED
-  created_at    DateTime  @default(now())
-  expires_at    DateTime? // Optional: Expiration for the link
-
-  // Relations
-  workspace   Workspace @relation(fields: [workspaceId], references: [id])
-
-  @@map("workspace_invitations")
-}
 
 enum WorkspaceRole {
   OWNER
@@ -113,6 +100,7 @@ model Project {
 
   @@map("projects")
   Changelog Changelog[]
+  invitations ProjectInvitation[]
 }
 
 model Task {
@@ -208,4 +196,56 @@ model Changelog {
 
   @@map("changelogs")
 }
+
+model WorkspaceInvitation {
+  id            String       @id @default(cuid())
+  workspaceId   String
+  token         String       @unique
+  role          WorkspaceRole
+  created_at    DateTime     @default(now())
+  expires_at    DateTime?
+  status        InvitationStatus @default(ACTIVE)
+  usage_limit   Int          @default(1)
+  remaining_uses Int         @default(1)
+
+  workspace     Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([token, status])
+  @@map("workspace_invitations")
+}
+
+model ProjectInvitation {
+  id            String       @id @default(cuid())
+  projectId     String
+  token         String       @unique
+  role          ProjectRole
+  created_at    DateTime     @default(now())
+  expires_at    DateTime?
+  status        InvitationStatus @default(ACTIVE)
+  usage_limit   Int          @default(1)
+  remaining_uses Int         @default(1)
+
+  project       Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([token, status])
+  @@map("project_invitations")
+}
+
+
+// Invitation Type and Status Enums
+enum InvitationType {
+  WORKSPACE
+  PROJECT
+}
+
+
+enum InvitationStatus {
+  ACTIVE
+  USED
+  EXPIRED
+  REVOKED
+}
+
+
+
 

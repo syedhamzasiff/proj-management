@@ -196,21 +196,6 @@ export default function Sidebar({ isOpen, onToggle}: SidebarProps) {
 
         <Separator />
 
-        {/* Search Bar - Only show when fully expanded */}
-        {sidebarState.width === 'w-64' && (
-          <div className="px-4 py-2">
-            <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8"
-              />
-            </div>
-          </div>
-        )}
-
         {/* Main Content */}
         <ScrollArea className="flex-1">
           <div className="py-2">
@@ -317,7 +302,6 @@ export default function Sidebar({ isOpen, onToggle}: SidebarProps) {
          {/* Bottom Section */}
          <div className="py-4 space-y-2">
           <NavItem icon={Settings} label="Settings" href={`/u/settings`} />
-          <NavItem icon={HelpCircle} label="Help" href="/help" />
         </div>
 
         {/* User Profile */}

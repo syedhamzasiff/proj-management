@@ -83,7 +83,6 @@ export default function WorkspacesPage() {
       </div>
       
       <WorkspaceSection title="Personal Workspaces" workspaces={personalWorkspaces} />
-      <WorkspaceSection title="Shared Workspaces" workspaces={sharedWorkspaces} />
     </div>
   )
 }

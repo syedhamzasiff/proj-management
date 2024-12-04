@@ -169,19 +169,6 @@ export default function ProjectDashboard() {
           />
         </div>
 
-        {/* Task List */}
-        <h3 className="text-xl font-semibold mt-8 mb-4">Recent Tasks</h3>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {projectData.tasks.list.map(task => (
-            <TaskCard 
-              key={task.id}
-              title={task.title} 
-              value={task.status} 
-              icon={task.type === 'FEATURE' ? Star : task.type === 'BUG' ? Bug : FileText}
-              task={task}
-            />
-          ))}
-        </div>
       </div>
     </TabsContent>
   )
